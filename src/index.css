@@ -1,0 +1,30 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  /* Easing "ease-out" fuerte: las interacciones deben sentirse inmediatas. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+:root { color-scheme: light dark; }
+html, body, #root { min-height: 100%; }
+body {
+  @apply bg-zinc-50 text-zinc-900 antialiased font-sans;
+  font-feature-settings: 'cv11', 'ss03';
+  -webkit-tap-highlight-color: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  body { @apply bg-zinc-950 text-zinc-100; }
+}
+
+.btn-press { transition: transform 160ms var(--ease-out-strong), background-color 160ms, opacity 160ms; }
+.btn-press:active { transform: scale(0.97); }
+
+::selection { background: color-mix(in oklab, currentColor 20%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
