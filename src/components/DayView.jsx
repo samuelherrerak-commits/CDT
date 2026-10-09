@@ -1,18 +1,31 @@
-import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { SLOTS, catById, currentSlot } from '../lib/slots'
+import { useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { SLOTS, catById } from '../lib/slots'
 import { addDays, formatDay, toISO } from '../lib/dates'
 
-export default function DayView({ dia, setDia, registros, onPick }) {
+/** Bloques de hoy que ya empezaron y siguen sin registro. */
+export const pendientesDeHoy = (registros, hoy, minutosAhora) =>
+  SLOTS.filter((s) => s.start <= minutosAhora && !registros.has(`${hoy}|${s.id}`))
+
+export default function DayView({ dia, setDia, registros, onPick, minutosAhora }) {
   const hoy = toISO(new Date())
-  const ahora = currentSlot()
-  const hechos = SLOTS.filter((s) => registros.has(`${dia}|${s.id}`)).length
+  const esHoy = dia === hoy
+  const [verHechos, setVerHechos] = useState(false)
+  const hechos = SLOTS.filter((s) => registros.has(`${dia}|${s.id}`))
+  const pendientes = esHoy ? pendientesDeHoy(registros, hoy, minutosAhora) : []
+
+  // Hoy: solo lo pendiente (+ lo ya registrado, plegado). Otros días: la grilla completa para poder corregir.
+  const principal = esHoy ? pendientes : SLOTS.filter((s) => dia < hoy)
+  const hechosHoy = esHoy ? hechos : []
+
+  const row = (s) => <SlotRow key={s.id} slot={s} registro={registros.get(`${dia}|${s.id}`)} activo={esHoy && s.start <= minutosAhora && minutosAhora < s.start + 30} onPick={onPick} />
 
   return (
     <section>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold capitalize tracking-tight">{dia === hoy ? 'Hoy' : formatDay(dia, { weekday: 'long' })}</h2>
+          <h2 className="text-xl font-semibold capitalize tracking-tight">{esHoy ? 'Hoy' : formatDay(dia, { weekday: 'long' })}</h2>
           <p className="text-sm text-zinc-500 first-letter:uppercase">{formatDay(dia, { day: 'numeric', month: 'long' })}</p>
         </div>
         <div className="flex gap-1">
@@ -23,39 +36,60 @@ export default function DayView({ dia, setDia, registros, onPick }) {
 
       <div className="mt-4 flex items-center gap-3">
         <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-          <motion.div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" initial={false} animate={{ width: `${(hechos / SLOTS.length) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
+          <motion.div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" initial={false} animate={{ width: `${(hechos.length / SLOTS.length) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
         </div>
-        <span className="text-xs tabular-nums text-zinc-500">{hechos}/{SLOTS.length}</span>
+        <span className="text-xs tabular-nums text-zinc-500">{hechos.length}/{SLOTS.length}</span>
       </div>
 
-      <ul className="mt-4 divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
-        {SLOTS.map((s) => {
-          const r = registros.get(`${dia}|${s.id}`)
-          const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes()
-          const futuro = dia > hoy || (dia === hoy && s.start > minutosAhora)
-          const activo = dia === hoy && ahora?.id === s.id
-          const cat = r && catById(r.categoria)
-          return (
-            <li key={s.id}>
-              <button
-                disabled={futuro}
-                onClick={() => onPick(s)}
-                className="btn-press group flex w-full items-center gap-4 py-3 text-left disabled:opacity-35"
-              >
-                <span className={`w-[8.5rem] shrink-0 text-xs tabular-nums ${activo ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}`}>
-                  {s.label}
-                </span>
-                <span className="flex min-w-0 flex-1 items-center gap-2.5">
-                  {cat && <span className={`size-2 shrink-0 rounded-full ${cat.dot}`} title={cat.label} />}
-                  <span className={`truncate text-sm ${r ? '' : 'text-zinc-400'}`}>{r ? r.actividad : futuro ? '' : 'No registré'}</span>
-                </span>
-                {activo && !r && <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white dark:bg-zinc-100 dark:text-zinc-900">Ahora</span>}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+      {esHoy && (
+        <p className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-zinc-400">
+          Por registrar {pendientes.length > 0 && <span className="tabular-nums">· {pendientes.length}</span>}
+        </p>
+      )}
+
+      {esHoy && pendientes.length === 0 ? (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
+          <span className="grid size-8 place-items-center rounded-full bg-emerald-500/10 text-emerald-600"><Check className="size-4" /></span>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Estás al día. El próximo bloque se habilita en :00 o :30.</p>
+        </motion.div>
+      ) : (
+        <ul className="mt-2 divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+          <AnimatePresence initial={false}>{principal.map(row)}</AnimatePresence>
+        </ul>
+      )}
+
+      {esHoy && hechosHoy.length > 0 && (
+        <div className="mt-6">
+          <button onClick={() => setVerHechos((v) => !v)} aria-expanded={verHechos} className="btn-press flex items-center gap-1.5 text-sm text-zinc-500">
+            Registrados hoy · {hechosHoy.length}
+            <ChevronDown className={`size-4 transition-transform duration-200 ${verHechos ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence initial={false}>
+            {verHechos && (
+              <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }} className="divide-y divide-zinc-200/70 overflow-hidden dark:divide-zinc-800/70">
+                {hechosHoy.map(row)}
+              </motion.ul>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </section>
+  )
+}
+
+function SlotRow({ slot, registro, activo, onPick }) {
+  const cat = registro && catById(registro.categoria)
+  return (
+    <motion.li layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.2 }}>
+      <button onClick={() => onPick(slot)} className="btn-press flex w-full items-center gap-4 py-3 text-left">
+        <span className={`w-[8.5rem] shrink-0 text-xs tabular-nums ${activo ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}`}>{slot.label}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-2.5">
+          {cat && <span className={`size-2 shrink-0 rounded-full ${cat.dot}`} title={cat.label} />}
+          <span className={`truncate text-sm ${registro ? '' : 'text-zinc-400'}`}>{registro ? registro.actividad : 'No registré'}</span>
+        </span>
+        {activo && !registro && <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white dark:bg-zinc-100 dark:text-zinc-900">Ahora</span>}
+      </button>
+    </motion.li>
   )
 }
 
