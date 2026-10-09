@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster, toast } from 'sonner'
 import { LogOut, Plus } from 'lucide-react'
-import { api, clearSession, getSession } from './lib/api'
+import { api, clearSession, getSession, readCache, writeCache } from './lib/api'
 import { addDays, formatDay, toISO, weekStart } from './lib/dates'
 import { currentSlot, SLOTS } from './lib/slots'
 import { useTimeNotifier } from './hooks/useTimeNotifier'
@@ -12,6 +12,11 @@ import DayView, { pendientesDeHoy } from './components/DayView'
 import ReminderBanner from './components/ReminderBanner'
 import Editor from './components/Editor'
 import EstadoResultados from './components/EstadoResultados'
+
+const keyOf = (r) => `${r.fecha}|${r.hora}`
+const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+// Abierta desde el ícono de inicio (o desde un aviso): ir directo a registrar.
+const ABRIR_DIRECTO = standalone() || new URLSearchParams(location.search).has('registrar')
 
 const TABS = [
   { id: 'dia', label: 'Registro' },
@@ -31,7 +36,12 @@ export default function App() {
 function Portal({ session, onLogout }) {
   const [tab, setTab] = useState('dia')
   const [dia, setDia] = useState(() => toISO(new Date()))
-  const [registros, setRegistros] = useState(() => new Map()) // "fecha|hora" -> registro
+  // Se pinta al instante con lo último guardado en el teléfono y se sincroniza con la hoja después.
+  const [registros, setRegistros] = useState(() => {
+    const cache = readCache(session.email)
+    return new Map(cache.map((r) => [keyOf(r), r]))
+  }) // "fecha|hora" -> registro
+  const [listo, setListo] = useState(() => readCache(session.email).length > 0)
   const [editando, setEditando] = useState(null) // slot
   const semana = weekStart(dia)
   const minutosAhora = useNowMinutes()
@@ -41,29 +51,63 @@ function Portal({ session, onLogout }) {
       const { data } = await api('registros', { desde: semana, hasta: addDays(semana, 6) })
       setRegistros((prev) => {
         const next = new Map([...prev].filter(([, r]) => r.fecha < semana || r.fecha > addDays(semana, 6)))
-        data.forEach((r) => next.set(`${r.fecha}|${r.hora}`, r))
+        data.forEach((r) => next.set(keyOf(r), r))
         return next
       })
+      setListo(true)
     } catch (e) {
-      if (e.auth) { toast.error('Tu sesión expiró'); onLogout() } else toast.error(e.message)
+      setListo(true) // sin red: seguimos con lo guardado en el teléfono
+      if (e.auth) { toast.error('Tu sesión expiró, entra de nuevo'); onLogout() } else toast.error(e.message)
     }
   }, [semana, onLogout])
 
   useEffect(() => { cargar() }, [cargar])
 
+  const registrosRef = useRef(registros)
+  registrosRef.current = registros
+  useEffect(() => { // guarda solo los últimos 14 días
+    const limite = addDays(toISO(new Date()), -14)
+    writeCache(session.email, [...registros.values()].filter((r) => r.fecha >= limite))
+  }, [registros, session.email])
+
+  // Abre el registro del bloque indicado, o del pendiente más antiguo de hoy.
   const abrirSlot = useCallback((id) => {
     const hoy = toISO(new Date())
+    const ahora = new Date().getHours() * 60 + new Date().getMinutes()
     setDia(hoy)
     setTab('dia')
-    const slot = SLOTS.find((s) => s.id === id) ?? currentSlot()
+    const slot = SLOTS.find((s) => s.id === id) ?? pendientesDeHoy(registrosRef.current, hoy, ahora)[0] ?? currentSlot()
     if (slot) setEditando(slot)
   }, [])
+
+  // Al abrir desde el ícono: directo al registro, una sola vez.
+  const abierto = useRef(false)
+  useEffect(() => {
+    if (!listo || abierto.current || !ABRIR_DIRECTO) return
+    abierto.current = true
+    if (location.search) history.replaceState(null, '', location.pathname)
+    abrirSlot()
+  }, [listo, abrirSlot])
+
+  // Al volver a la app (otro día, o tras estar en segundo plano): hoy + datos frescos.
+  const ultimoDia = useRef(toISO(new Date()))
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const hoy = toISO(new Date())
+      if (hoy !== ultimoDia.current) { ultimoDia.current = hoy; setDia(hoy) }
+      cargar()
+    }
+    const onSw = (e) => e.data?.type === 'registrar' && abrirSlot()
+    document.addEventListener('visibilitychange', onVisible)
+    navigator.serviceWorker?.addEventListener('message', onSw)
+    return () => { document.removeEventListener('visibilitychange', onVisible); navigator.serviceWorker?.removeEventListener('message', onSw) }
+  }, [cargar, abrirSlot])
 
   const hoyISO = toISO(new Date())
   const esHoy = dia === hoyISO
   const pendientes = pendientesDeHoy(registros, hoyISO, minutosAhora)
 
-  const registrosRef = useMemo(() => ({ current: registros }), [registros])
   const { permission, requestPermission } = useTimeNotifier({
     enabled: true,
     needsReminder: (id) => !registrosRef.current.has(`${toISO(new Date())}|${id}`),

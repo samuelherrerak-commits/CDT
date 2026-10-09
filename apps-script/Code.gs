@@ -13,7 +13,7 @@
 var HOJA_USUARIOS = 'Usuarios';
 var HOJA_REGISTROS = 'Registros';
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
-var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 días
+var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
 
 /** Ejecutar UNA vez desde el editor para crear hojas y secretos. */
@@ -129,7 +129,7 @@ function listar_(d) {
     if (fecha < desde || fecha > hasta) continue; // ISO se compara bien como texto
     out.push({ fecha: fecha, hora: horaTexto_(r[2]), actividad: r[3], categoria: r[4] });
   }
-  return { success: true, data: out };
+  return { success: true, data: out, token: crearToken_(email) }; // renueva la sesión
 }
 
 /* ---------- Utilidades ---------- */

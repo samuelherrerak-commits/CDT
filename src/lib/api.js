@@ -19,6 +19,14 @@ export const clearSession = () => {
   } catch {}
 }
 
+const CACHE_KEY = (email) => `ct:cache:${email}`
+export const readCache = (email) => {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY(email))) || [] } catch { return [] }
+}
+export const writeCache = (email, registros) => {
+  try { localStorage.setItem(CACHE_KEY(email), JSON.stringify(registros)) } catch {}
+}
+
 export class ApiError extends Error {
   constructor(message, auth = false) {
     super(message)
@@ -47,5 +55,7 @@ export async function api(action, payload = {}) {
     const msg = json?.message || 'Error inesperado'
     throw new ApiError(msg, /Sesión/.test(msg))
   }
+  // Sesión deslizante: el servidor devuelve un token nuevo y lo guardamos.
+  if (json.token && session) saveSession({ ...session, token: json.token })
   return json
 }

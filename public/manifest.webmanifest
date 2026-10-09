@@ -2,7 +2,7 @@
   "name": "La Contabilidad de tu Tiempo · MTH",
   "short_name": "Mi Tiempo",
   "description": "Ejercicio de Medición y Talento Humano",
-  "start_url": "/",
+  "start_url": "/?registrar=1",
   "display": "standalone",
   "background_color": "#F6F1E8",
   "theme_color": "#F6F1E8",
