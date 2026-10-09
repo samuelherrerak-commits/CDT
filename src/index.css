@@ -15,6 +15,7 @@
   --color-brand-tint: #F6E2D7;
   --color-ochre: #D9A441;
   --color-teal: #3F7F86;
+  --color-dusk: #5F6B8A;
 
   /* La escala "zinc" se redefine como neutros cálidos de MTH, así toda la UI hereda la marca. */
   --color-zinc-50: #FBF8F2;

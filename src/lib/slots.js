@@ -25,3 +25,5 @@ export const CATEGORIAS = [
   { id: 'mantenimiento', label: 'Mantenimiento', hint: 'Comer, dormir, aseo, traslados', dot: 'bg-teal' },
 ]
 export const catById = (id) => CATEGORIAS.find((c) => c.id === id)
+
+export const SUENO = { id: 'sueno', label: 'Sueño', dot: 'bg-dusk' }

@@ -1,9 +1,10 @@
 /**
  * LA CONTABILIDAD DE TU TIEMPO — Backend (Google Apps Script)
  *
- * Hoja de cálculo con 2 pestañas (se crean solas al ejecutar setup()):
- *   Usuarios:  Email | Nombre | Sal | HashPassword | Creado
+ * Hoja de cálculo con 3 pestañas (se crean solas al ejecutar setup()):
+ *   Usuarios:  Email | Nombre | Sal | HashPassword | Creado | HoraDormir | HoraDespertar   (horario habitual)
  *   Registros: Email | Fecha (YYYY-MM-DD) | Hora (HH:mm, inicio del bloque) | Actividad | Categoria | Actualizado
+ *   Sueno:     Email | Fecha (día en que despertó) | Durmio (HH:mm) | Desperto (HH:mm) | Minutos | Actualizado
  *
  * Configuración (Configuración del proyecto > Propiedades de la secuencia de comandos):
  *   CODIGO_ACCESO  Código que la profesora comparte con sus alumnos para poder registrarse.
@@ -12,6 +13,7 @@
 
 var HOJA_USUARIOS = 'Usuarios';
 var HOJA_REGISTROS = 'Registros';
+var HOJA_SUENO = 'Sueno';
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
 var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
@@ -22,14 +24,16 @@ function setup() {
   var props = PropertiesService.getScriptProperties();
 
   var usuarios = ss.getSheetByName(HOJA_USUARIOS) || ss.insertSheet(HOJA_USUARIOS);
-  usuarios.getRange(1, 1, 1, 5).setValues([['Email', 'Nombre', 'Sal', 'HashPassword', 'Creado']]);
-  usuarios.getRange('A:E').setNumberFormat('@'); // texto plano, evita conversiones de Sheets
+  usuarios.getRange(1, 1, 1, 7).setValues([['Email', 'Nombre', 'Sal', 'HashPassword', 'Creado', 'HoraDormir', 'HoraDespertar']]);
+  usuarios.getRange('A:G').setNumberFormat('@'); // texto plano, evita conversiones de Sheets
   usuarios.setFrozenRows(1);
 
   var registros = ss.getSheetByName(HOJA_REGISTROS) || ss.insertSheet(HOJA_REGISTROS);
   registros.getRange(1, 1, 1, 6).setValues([['Email', 'Fecha', 'Hora', 'Actividad', 'Categoria', 'Actualizado']]);
   registros.getRange('A:F').setNumberFormat('@');
   registros.setFrozenRows(1);
+
+  hojaSueno_();
 
   if (!props.getProperty('TOKEN_SECRET')) props.setProperty('TOKEN_SECRET', Utilities.getUuid() + Utilities.getUuid());
   if (!props.getProperty('CODIGO_ACCESO')) props.setProperty('CODIGO_ACCESO', 'CAMBIA-ESTE-CODIGO');
@@ -50,6 +54,8 @@ function doPost(e) {
       case 'guardar':    return json_(guardar_(data));
       case 'eliminar':   return json_(eliminar_(data));
       case 'registros':  return json_(listar_(data));
+      case 'perfil':     return json_(guardarPerfil_(data));
+      case 'sueno':      return json_(guardarSueno_(data));
       default:           return json_({ success: false, message: 'Acción no válida' });
     }
   } catch (err) {
@@ -76,7 +82,7 @@ function registro_(d) {
 
   var sal = Utilities.getUuid();
   ws.appendRow([email, nombre, sal, hash_(password, sal), new Date().toISOString()]);
-  return { success: true, name: nombre, email: email, token: crearToken_(email) };
+  return { success: true, name: nombre, email: email, perfil: null, token: crearToken_(email) };
 }
 
 function login_(d) {
@@ -84,7 +90,7 @@ function login_(d) {
   var fila = buscarUsuario_(hoja_(HOJA_USUARIOS), email);
   // Mismo mensaje para "no existe" y "contraseña incorrecta".
   if (!fila || hash_(String(d.password || ''), fila.row[2]) !== fila.row[3]) return fail_('Credenciales inválidas');
-  return { success: true, name: fila.row[1], email: email, token: crearToken_(email) };
+  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), token: crearToken_(email) };
 }
 
 function guardar_(d) {
@@ -115,6 +121,40 @@ function eliminar_(d) {
   return { success: true };
 }
 
+/** Horario habitual de sueño del usuario (para los avisos de dormir y despertar). */
+function guardarPerfil_(d) {
+  var email = verificarToken_(d.token);
+  var dormir = validarHoraLibre_(d.dormir);
+  var despertar = validarHoraLibre_(d.despertar);
+  var fila = buscarUsuario_(hoja_(HOJA_USUARIOS), email);
+  if (!fila) return fail_('Usuario no encontrado');
+  var ws = hoja_(HOJA_USUARIOS);
+  ws.getRange(1, 6, 1, 2).setValues([['HoraDormir', 'HoraDespertar']]);
+  ws.getRange(fila.index, 6, 1, 2).setNumberFormat('@').setValues([[dormir, despertar]]);
+  return { success: true };
+}
+
+/** Sueño de la noche anterior; la fecha es el día en que despertó. Reemplaza si ya existe. */
+function guardarSueno_(d) {
+  var email = verificarToken_(d.token);
+  var fecha = validarFecha_(d.fecha);
+  var dormir = validarHoraLibre_(d.dormir);
+  var despertar = validarHoraLibre_(d.despertar);
+  var minutos = (minDe_(despertar) - minDe_(dormir) + 1440) % 1440;
+  if (minutos < 30 || minutos > 1200) return fail_('Revisa las horas: el sueño debe durar entre 30 min y 20 h');
+
+  var ws = hojaSueno_();
+  var filas = ws.getDataRange().getValues();
+  var fila = 0;
+  for (var i = 1; i < filas.length; i++) {
+    if (String(filas[i][0]).toLowerCase() === email && fechaTexto_(filas[i][1]) === fecha) { fila = i + 1; break; }
+  }
+  var datos = [dormir, despertar, String(minutos), new Date().toISOString()];
+  if (fila) ws.getRange(fila, 3, 1, 4).setValues([datos]);
+  else ws.appendRow([email, fecha].concat(datos));
+  return { success: true, minutos: minutos };
+}
+
 /** Devuelve los registros del usuario entre dos fechas (inclusive). El frontend calcula el estado de resultados. */
 function listar_(d) {
   var email = verificarToken_(d.token);
@@ -129,7 +169,17 @@ function listar_(d) {
     if (fecha < desde || fecha > hasta) continue; // ISO se compara bien como texto
     out.push({ fecha: fecha, hora: horaTexto_(r[2]), actividad: r[3], categoria: r[4] });
   }
-  return { success: true, data: out, token: crearToken_(email) }; // renueva la sesión
+  var sueno = [];
+  var fs = hojaSueno_().getDataRange().getValues();
+  for (var j = 1; j < fs.length; j++) {
+    var q = fs[j];
+    if (String(q[0]).toLowerCase() !== email) continue;
+    var f = fechaTexto_(q[1]);
+    if (f < desde || f > hasta) continue;
+    sueno.push({ fecha: f, dormir: horaTexto_(q[2]), despertar: horaTexto_(q[3]), minutos: Number(q[4]) });
+  }
+  var u = buscarUsuario_(hoja_(HOJA_USUARIOS), email);
+  return { success: true, data: out, sueno: sueno, perfil: u ? perfil_(u.row) : null, token: crearToken_(email) }; // renueva la sesión
 }
 
 /* ---------- Utilidades ---------- */
@@ -148,6 +198,25 @@ function normEmail_(v) { return String(v || '').trim().toLowerCase(); }
 function validarFecha_(v) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v))) throw new Error('Fecha no válida');
   return String(v);
+}
+function validarHoraLibre_(v) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(v))) throw new Error('Hora no válida');
+  return String(v);
+}
+function minDe_(hhmm) { var p = hhmm.split(':'); return +p[0] * 60 + +p[1]; }
+function perfil_(row) {
+  return row[5] && row[6] ? { dormir: horaTexto_(row[5]), despertar: horaTexto_(row[6]) } : null;
+}
+function hojaSueno_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName(HOJA_SUENO);
+  if (!ws) {
+    ws = ss.insertSheet(HOJA_SUENO);
+    ws.getRange(1, 1, 1, 6).setValues([['Email', 'Fecha', 'Durmio', 'Desperto', 'Minutos', 'Actualizado']]);
+    ws.getRange('A:F').setNumberFormat('@');
+    ws.setFrozenRows(1);
+  }
+  return ws;
 }
 function validarHora_(v) {
   var m = /^(\d{2}):(\d{2})$/.exec(String(v));

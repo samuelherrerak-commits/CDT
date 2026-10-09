@@ -1,19 +1,20 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Moon } from 'lucide-react'
 import { SLOTS, catById } from '../lib/slots'
 import { addDays, formatDay, toISO } from '../lib/dates'
+import { fmtDur, fmtHora } from '../lib/sueno'
 
 /** Bloques de hoy que ya empezaron y siguen sin registro. */
-export const pendientesDeHoy = (registros, hoy, minutosAhora) =>
-  SLOTS.filter((s) => s.start <= minutosAhora && !registros.has(`${hoy}|${s.id}`))
+export const pendientesDeHoy = (registros, hoy, minutosAhora, despertarMin = 0) =>
+  SLOTS.filter((s) => s.start <= minutosAhora && s.start + 30 > despertarMin && !registros.has(`${hoy}|${s.id}`))
 
-export default function DayView({ dia, setDia, registros, onPick, minutosAhora }) {
+export default function DayView({ dia, setDia, registros, onPick, minutosAhora, sueno, onSueno, despertarMin }) {
   const hoy = toISO(new Date())
   const esHoy = dia === hoy
   const [verHechos, setVerHechos] = useState(false)
   const hechos = SLOTS.filter((s) => registros.has(`${dia}|${s.id}`))
-  const pendientes = esHoy ? pendientesDeHoy(registros, hoy, minutosAhora) : []
+  const pendientes = esHoy ? pendientesDeHoy(registros, hoy, minutosAhora, despertarMin) : []
 
   // Hoy: solo lo pendiente (+ lo ya registrado, plegado). Otros días: la grilla completa para poder corregir.
   const principal = esHoy ? pendientes : SLOTS.filter((s) => dia < hoy)
@@ -40,6 +41,19 @@ export default function DayView({ dia, setDia, registros, onPick, minutosAhora }
         </div>
         <span className="text-xs tabular-nums text-zinc-500">{hechos.length}/{SLOTS.length}</span>
       </div>
+
+      <button onClick={onSueno} className="btn-press mt-5 flex w-full items-center gap-3 rounded-2xl bg-zinc-50 px-4 py-3 text-left ring-1 ring-zinc-900/10">
+        <Moon className="size-4 shrink-0 text-dusk" aria-hidden />
+        {sueno ? (
+          <span className="flex-1 text-sm">
+            Dormiste <span className="font-medium tnum">{fmtDur(sueno.minutos)}</span>
+            <span className="tnum text-zinc-500"> · {fmtHora(sueno.dormir)} → {fmtHora(sueno.despertar)}</span>
+          </span>
+        ) : (
+          <span className="flex-1 text-sm text-zinc-500">Sueño sin registrar</span>
+        )}
+        <span className="text-sm font-medium text-brand-deep">{sueno ? 'Editar' : 'Anotar'}</span>
+      </button>
 
       {esHoy && (
         <p className="mt-7 text-sm font-medium text-zinc-600">

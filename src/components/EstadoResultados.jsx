@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { CATEGORIAS } from '../lib/slots'
+import { CATEGORIAS, SUENO } from '../lib/slots'
 import { addDays, formatDay, toISO, weekStart } from '../lib/dates'
 import { estadoResultados } from '../lib/resultados'
 
@@ -8,14 +8,15 @@ const fmtH = (h) => `${Number.isInteger(h) ? h : h.toFixed(1)} h`
 const ease = [0.23, 1, 0.32, 1]
 
 /** Se presenta como un estado de resultados de verdad: renglones, líneas y doble raya en el total. */
-export default function EstadoResultados({ dia, setDia, registros }) {
+export default function EstadoResultados({ dia, setDia, registros, sueno }) {
   const lunes = weekStart(dia)
   const domingo = addDays(lunes, 6)
   const esActual = weekStart(toISO(new Date())) === lunes
-  const er = estadoResultados([...registros.values()].filter((r) => r.fecha >= lunes && r.fecha <= domingo), dia)
+  const er = estadoResultados([...registros.values()].filter((r) => r.fecha >= lunes && r.fecha <= domingo), dia, new Date(), [...sueno.values()].filter((s) => s.fecha >= lunes && s.fecha <= domingo))
 
   const filas = [
     ...CATEGORIAS.map((c) => ({ key: c.id, label: c.label, dot: c.dot, h: er.horas[c.id] })),
+    { key: SUENO.id, label: SUENO.label, dot: SUENO.dot, h: er.sueno },
     { key: 'sin', label: 'Sin registrar', dot: 'bg-zinc-300', h: er.sinRegistrar },
   ]
   const utilidad = er.horas.inversion - er.horas.gasto

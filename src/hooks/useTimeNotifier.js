@@ -9,13 +9,18 @@ const supported = () => typeof window !== 'undefined' && 'Notification' in windo
  * Limitación honesta: sin un servidor de Web Push no se puede avisar con la app totalmente cerrada.
  * `needsReminder()` evita avisar si el bloque anterior ya está registrado.
  */
-export function useTimeNotifier({ enabled, needsReminder, onOpen }) {
+export function useTimeNotifier({ enabled, needsReminder, onOpen, onWake, perfil }) {
   const [permission, setPermission] = useState(supported() ? Notification.permission : 'unsupported')
   const last = useRef('')
   const needsRef = useRef(needsReminder)
   const openRef = useRef(onOpen)
+  const wakeRef = useRef(onWake)
+  const perfilRef = useRef(perfil)
+  const firedRef = useRef('')
   needsRef.current = needsReminder
   openRef.current = onOpen
+  wakeRef.current = onWake
+  perfilRef.current = perfil
 
   const requestPermission = useCallback(async () => {
     if (!supported()) return toast('Tu navegador no soporta notificaciones')
@@ -30,8 +35,36 @@ export function useTimeNotifier({ enabled, needsReminder, onOpen }) {
 
   useEffect(() => {
     if (!enabled) return
+    const notify = (title, body, tag, kind) => {
+      if (!supported() || Notification.permission !== 'granted') return
+      const opts = { body, tag, data: { kind } }
+      navigator.serviceWorker?.ready
+        .then((reg) => reg.showNotification(title, opts))
+        .catch(() => new Notification(title, opts))
+    }
+
+    // Horario habitual de sueño: aviso al despertar y al acostarse.
+    const sleepTick = (now) => {
+      const p = perfilRef.current
+      if (!p) return
+      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const kind = hhmm === p.despertar ? 'despertar' : hhmm === p.dormir ? 'dormir' : null
+      if (!kind) return
+      const key = `${now.toDateString()}-${kind}-${hhmm}`
+      if (firedRef.current === key) return
+      firedRef.current = key
+      if (kind === 'despertar') {
+        toast('Buenos días', { description: '¿A qué hora te dormiste y cuándo despertaste?', action: { label: 'Anotar sueño', onClick: () => wakeRef.current?.() }, duration: 15000 })
+        notify('Buenos días', '¿Cuánto dormiste? Anota tu sueño para abrir el día.', 'ct-despertar', 'despertar')
+      } else {
+        toast('Es hora de acostarte', { description: 'Descansar también es parte de tu balance.', duration: 10000 })
+        notify('Es hora de acostarte', 'Descansar también es parte de tu balance.', 'ct-dormir', 'dormir')
+      }
+    }
+
     const tick = () => {
       const now = new Date()
+      sleepTick(now)
       const m = now.getMinutes()
       if (m !== 0 && m !== 30) return
       const key = `${now.toDateString()}-${now.getHours()}:${m}`

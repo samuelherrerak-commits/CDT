@@ -27,6 +27,13 @@ export const writeCache = (email, registros) => {
   try { localStorage.setItem(CACHE_KEY(email), JSON.stringify(registros)) } catch {}
 }
 
+export const readLocal = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback }
+}
+export const writeLocal = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
+}
+
 export class ApiError extends Error {
   constructor(message, auth = false) {
     super(message)

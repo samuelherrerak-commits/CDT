@@ -6,9 +6,9 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const c of list) {
-        if ('focus' in c) { c.postMessage({ type: 'registrar' }); return c.focus() }
+        if ('focus' in c) { c.postMessage({ type: 'registrar', kind: event.notification.data?.kind }); return c.focus() }
       }
-      return self.clients.openWindow('/?registrar=1')
+      return self.clients.openWindow(event.notification.data?.kind === 'despertar' ? '/?sueno=1' : '/?registrar=1')
     }),
   )
 })
