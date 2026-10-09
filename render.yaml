@@ -6,7 +6,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false # pégala en el panel de Render (URL /exec de Apps Script)
+        value: https://script.google.com/macros/s/AKfycbxIvmuarFpP8IAjxRzP6AvR_keKmY92WLH62CY-wE41EV9Tn39ZIRY4CNc2JnmhzvzC5A/exec
     routes:
       - type: rewrite
         source: /*
