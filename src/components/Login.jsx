@@ -4,7 +4,9 @@ import { Loader2 } from 'lucide-react'
 import { api, saveSession } from '../lib/api'
 
 const field =
-  'w-full rounded-xl bg-zinc-100 dark:bg-zinc-900 px-4 py-3 text-[16px] outline-none ring-1 ring-transparent transition-shadow placeholder:text-zinc-400 focus:ring-zinc-900 dark:focus:ring-zinc-100'
+  'w-full rounded-xl bg-zinc-200/70 px-4 py-3.5 text-[16px] outline-none ring-1 ring-transparent transition-shadow placeholder:text-zinc-400 focus:bg-zinc-50 focus:ring-brand'
+const ease = [0.23, 1, 0.32, 1]
+const rise = (i) => ({ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, ease, delay: i * 0.06 } })
 
 export default function Login({ onLogin }) {
   const [modo, setModo] = useState('login')
@@ -32,37 +34,38 @@ export default function Login({ onLogin }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-12">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">Ejercicio</p>
-        <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-balance">La contabilidad de tu tiempo</h1>
-        <p className="mt-3 text-sm text-zinc-500 text-pretty">
-          El tiempo es tu recurso más escaso. Anótalo cada media hora y, al cerrar la semana, revisa tu estado de resultados.
-        </p>
+      <motion.img {...rise(0)} src="/logo-mth.png" alt="MTH · Medición y Talento Humano" width="191" height="106" className="-ml-2 h-[88px] w-auto self-start" />
 
-        <form onSubmit={submit} className="mt-8 space-y-3">
-          <AnimatePresence initial={false}>
-            {esRegistro && (
-              <motion.div key="reg" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }} className="space-y-3 overflow-hidden p-0.5 -m-0.5">
-                <input className={field} placeholder="Nombre" autoComplete="name" required value={form.nombre} onChange={set('nombre')} />
-                <input className={field} placeholder="Código de acceso (te lo da tu profesora)" required value={form.codigo} onChange={set('codigo')} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <input className={field} type="email" placeholder="Correo" autoComplete="email" required value={form.email} onChange={set('email')} />
-          <input className={field} type="password" placeholder="Contraseña" autoComplete={esRegistro ? 'new-password' : 'current-password'} minLength={6} required value={form.password} onChange={set('password')} />
+      <motion.h1 {...rise(1)} className="mt-8 text-[2.5rem] font-medium leading-[1.05] text-balance">
+        La contabilidad de tu tiempo
+      </motion.h1>
+      <motion.p {...rise(2)} className="mt-4 max-w-[34ch] text-[15px] leading-relaxed text-zinc-500 text-pretty">
+        Anota cada media hora de tu día. Al cerrar la semana verás en qué invertiste tu recurso más escaso.
+      </motion.p>
 
-          <p role="alert" className="min-h-5 text-sm text-red-500">{error}</p>
+      <motion.form {...rise(3)} onSubmit={submit} className="mt-9 space-y-3">
+        <AnimatePresence initial={false}>
+          {esRegistro && (
+            <motion.div key="reg" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease }} className="-m-0.5 space-y-3 overflow-hidden p-0.5">
+              <input className={field} placeholder="Nombre" autoComplete="name" required value={form.nombre} onChange={set('nombre')} />
+              <input className={field} placeholder="Código de acceso del curso" required value={form.codigo} onChange={set('codigo')} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <input className={field} type="email" placeholder="Correo" autoComplete="email" required value={form.email} onChange={set('email')} />
+        <input className={field} type="password" placeholder="Contraseña" autoComplete={esRegistro ? 'new-password' : 'current-password'} minLength={6} required value={form.password} onChange={set('password')} />
 
-          <button disabled={loading} className="btn-press flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
-            {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            {esRegistro ? 'Crear cuenta' : 'Entrar'}
-          </button>
-        </form>
+        <p role="alert" className="min-h-5 text-sm text-brand-deep">{error}</p>
 
-        <button type="button" onClick={() => { setModo(esRegistro ? 'login' : 'registro'); setError('') }} className="mt-6 text-sm text-zinc-500 underline-offset-4 hover:underline">
-          {esRegistro ? 'Ya tengo cuenta' : 'Primera vez · crear cuenta'}
+        <button disabled={loading} className="btn-press flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-deep font-medium text-white hover:bg-brand-deep/90 disabled:opacity-60">
+          {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+          {esRegistro ? 'Crear cuenta' : 'Entrar'}
         </button>
-      </motion.div>
+      </motion.form>
+
+      <motion.button {...rise(4)} type="button" onClick={() => { setModo(esRegistro ? 'login' : 'registro'); setError('') }} className="mt-6 self-start text-sm text-zinc-500 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-900">
+        {esRegistro ? 'Ya tengo cuenta' : 'Primera vez · crear cuenta'}
+      </motion.button>
     </main>
   )
 }

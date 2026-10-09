@@ -25,7 +25,7 @@ export default function DayView({ dia, setDia, registros, onPick, minutosAhora }
     <section>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold capitalize tracking-tight">{esHoy ? 'Hoy' : formatDay(dia, { weekday: 'long' })}</h2>
+          <h2 className="text-2xl font-medium capitalize">{esHoy ? 'Hoy' : formatDay(dia, { weekday: 'long' })}</h2>
           <p className="text-sm text-zinc-500 first-letter:uppercase">{formatDay(dia, { day: 'numeric', month: 'long' })}</p>
         </div>
         <div className="flex gap-1">
@@ -35,25 +35,25 @@ export default function DayView({ dia, setDia, registros, onPick, minutosAhora }
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-          <motion.div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" initial={false} animate={{ width: `${(hechos.length / SLOTS.length) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-300">
+          <motion.div className="h-full rounded-full bg-brand" initial={false} animate={{ width: `${(hechos.length / SLOTS.length) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
         </div>
         <span className="text-xs tabular-nums text-zinc-500">{hechos.length}/{SLOTS.length}</span>
       </div>
 
       {esHoy && (
-        <p className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-zinc-400">
+        <p className="mt-7 text-sm font-medium text-zinc-600">
           Por registrar {pendientes.length > 0 && <span className="tabular-nums">· {pendientes.length}</span>}
         </p>
       )}
 
       {esHoy && pendientes.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
-          <span className="grid size-8 place-items-center rounded-full bg-emerald-500/10 text-emerald-600"><Check className="size-4" /></span>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Estás al día. El próximo bloque se habilita en :00 o :30.</p>
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center gap-3 rounded-2xl bg-zinc-50 p-4 ring-1 ring-zinc-900/10">
+          <span className="grid size-8 place-items-center rounded-full bg-brand-tint text-brand-deep"><Check className="size-4" /></span>
+          <p className="text-sm text-zinc-600">Estás al día. El próximo bloque se habilita en :00 o :30.</p>
         </motion.div>
       ) : (
-        <ul className="mt-2 divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+        <ul className="mt-2 divide-y divide-zinc-200/70">
           <AnimatePresence initial={false}>{principal.map(row)}</AnimatePresence>
         </ul>
       )}
@@ -66,7 +66,7 @@ export default function DayView({ dia, setDia, registros, onPick, minutosAhora }
           </button>
           <AnimatePresence initial={false}>
             {verHechos && (
-              <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }} className="divide-y divide-zinc-200/70 overflow-hidden dark:divide-zinc-800/70">
+              <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }} className="divide-y divide-zinc-200/70 overflow-hidden">
                 {hechosHoy.map(row)}
               </motion.ul>
             )}
@@ -82,12 +82,12 @@ function SlotRow({ slot, registro, activo, onPick }) {
   return (
     <motion.li layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.2 }}>
       <button onClick={() => onPick(slot)} className="btn-press flex w-full items-center gap-4 py-3 text-left">
-        <span className={`w-[8.5rem] shrink-0 text-xs tabular-nums ${activo ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}`}>{slot.label}</span>
+        <span className={`w-[8.5rem] shrink-0 text-xs tabular-nums ${activo ? 'font-semibold text-zinc-900' : 'text-zinc-400'}`}>{slot.label}</span>
         <span className="flex min-w-0 flex-1 items-center gap-2.5">
           {cat && <span className={`size-2 shrink-0 rounded-full ${cat.dot}`} title={cat.label} />}
           <span className={`truncate text-sm ${registro ? '' : 'text-zinc-400'}`}>{registro ? registro.actividad : 'No registré'}</span>
         </span>
-        {activo && !registro && <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white dark:bg-zinc-100 dark:text-zinc-900">Ahora</span>}
+        {activo && !registro && <span className="rounded-full bg-brand-deep px-2 py-0.5 text-[11px] font-medium text-white">Ahora</span>}
       </button>
     </motion.li>
   )
@@ -95,7 +95,7 @@ function SlotRow({ slot, registro, activo, onPick }) {
 
 function NavBtn({ label, children, ...p }) {
   return (
-    <button aria-label={label} {...p} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200/60 disabled:opacity-30 dark:hover:bg-zinc-800">
+    <button aria-label={label} {...p} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200 disabled:opacity-30">
       {children}
     </button>
   )

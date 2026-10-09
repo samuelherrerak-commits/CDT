@@ -20,8 +20,8 @@ export function currentSlot(now = new Date()) {
 }
 
 export const CATEGORIAS = [
-  { id: 'inversion', label: 'Inversión', hint: 'Trabajo, estudio, metas', dot: 'bg-emerald-500' },
-  { id: 'gasto', label: 'Gasto corriente', hint: 'Ocio, redes, distracción', dot: 'bg-amber-500' },
-  { id: 'mantenimiento', label: 'Mantenimiento', hint: 'Comer, dormir, aseo, traslados', dot: 'bg-sky-500' },
+  { id: 'inversion', label: 'Inversión', hint: 'Trabajo, estudio, metas', dot: 'bg-brand' },
+  { id: 'gasto', label: 'Gasto corriente', hint: 'Ocio, redes, distracción', dot: 'bg-ochre' },
+  { id: 'mantenimiento', label: 'Mantenimiento', hint: 'Comer, dormir, aseo, traslados', dot: 'bg-teal' },
 ]
 export const catById = (id) => CATEGORIAS.find((c) => c.id === id)

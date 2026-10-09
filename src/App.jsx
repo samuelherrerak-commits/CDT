@@ -23,7 +23,7 @@ export default function App() {
   return (
     <>
       {session ? <Portal session={session} onLogout={() => { clearSession(); setSession(null) }} /> : <Login onLogin={setSession} />}
-      <Toaster position="top-center" toastOptions={{ className: '!rounded-2xl' }} />
+      <Toaster position="top-center" theme="light" toastOptions={{ className: '!rounded-2xl !font-sans' }} />
     </>
   )
 }
@@ -98,20 +98,21 @@ function Portal({ session, onLogout }) {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-xl px-5 pb-36 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <header className="flex items-center justify-between py-3">
-        <p className="text-sm text-zinc-500">Hola, <span className="font-medium text-zinc-900 dark:text-zinc-100">{session.name.split(' ')[0]}</span></p>
-        <div className="flex gap-1">
+    <div className="mx-auto min-h-dvh max-w-xl px-5 pb-36 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="flex items-center justify-between">
+        <img src="/logo-mth.png" alt="MTH · Medición y Talento Humano" width="108" height="60" className="-ml-1.5 h-[60px] w-auto" />
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-zinc-500">Hola, <span className="font-medium text-zinc-900">{session.name.split(' ')[0]}</span></span>
           <IconBtn label="Cerrar sesión" onClick={onLogout}><LogOut className="size-4" /></IconBtn>
         </div>
       </header>
 
       <ReminderBanner permission={permission} onEnable={requestPermission} />
 
-      <nav className="relative mt-4 flex rounded-full bg-zinc-200/60 p-1 dark:bg-zinc-900" aria-label="Secciones">
+      <nav className="relative mt-4 flex rounded-full bg-zinc-200 p-1" aria-label="Secciones">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id} className="btn-press relative flex-1 rounded-full py-2 text-sm font-medium">
-            {tab === t.id && <motion.span layoutId="tab" transition={{ type: 'spring', bounce: 0.15, duration: 0.45 }} className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-zinc-800" />}
+            {tab === t.id && <motion.span layoutId="tab" transition={{ type: 'spring', bounce: 0.15, duration: 0.45 }} className="absolute inset-0 rounded-full bg-zinc-50 shadow-[0_1px_2px_rgb(26_26_26/0.08)]" />}
             <span className={`relative ${tab === t.id ? '' : 'text-zinc-500'}`}>{t.label}</span>
           </button>
         ))}
@@ -133,12 +134,12 @@ function Portal({ session, onLogout }) {
             key="cta"
             initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
             transition={{ type: 'spring', bounce: 0.15, duration: 0.45 }}
-            className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-zinc-50 via-zinc-50/90 to-transparent px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8 dark:from-zinc-950 dark:via-zinc-950/90"
+            className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-zinc-100 via-zinc-100/90 to-transparent px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8"
           >
-            <button onClick={() => setEditando(pendientes[0])} className="btn-press mx-auto flex h-16 w-full max-w-xl items-center justify-center gap-3 rounded-2xl bg-zinc-900 text-base font-medium text-white shadow-[0_8px_30px_rgb(0_0_0/0.18)] dark:bg-zinc-100 dark:text-zinc-900">
+            <button onClick={() => setEditando(pendientes[0])} className="btn-press mx-auto flex h-16 w-full max-w-xl items-center justify-center gap-3 rounded-2xl bg-brand-deep text-base font-medium text-white shadow-[0_8px_24px_rgb(197_54_15/0.28)]">
               <Plus className="size-5" />
               <span>Registrar <span className="tabular-nums">{pendientes[0].label.split(' – ')[0]}</span></span>
-              {pendientes.length > 1 && <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs tabular-nums dark:bg-black/10">+{pendientes.length - 1}</span>}
+              {pendientes.length > 1 && <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs tabular-nums">+{pendientes.length - 1}</span>}
             </button>
           </motion.div>
         )}
@@ -159,5 +160,5 @@ function Portal({ session, onLogout }) {
 }
 
 function IconBtn({ label, children, ...p }) {
-  return <button aria-label={label} title={label} {...p} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">{children}</button>
+  return <button aria-label={label} title={label} {...p} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200">{children}</button>
 }
