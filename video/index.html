@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>La contabilidad de tu tiempo — video explicativo</title>
+<style>
+@font-face { font-family: 'Jost'; src: url(assets/jost-latin-wght-normal.woff2); font-weight: 100 900; }
+@font-face { font-family: 'Inter'; src: url(assets/inter-latin-wght-normal.woff2); font-weight: 100 900; }
+:root { --paper:#F6F1E8; --card:#FBF8F2; --line:#E0D7C6; --ink:#1A1A1A; --soft:#4D4D4D; --muted:#726B61; --brand:#E8471F; --deep:#C5360F; --tint:#F6E2D7; --ochre:#D9A441; --teal:#3F7F86; --dusk:#5F6B8A; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); }
+body { font-family: 'Inter', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.scene { position: absolute; inset: 0; opacity: 0; }
+.abs { position: absolute; }
+h1, h2, h3, .jost { font-family: 'Jost', sans-serif; font-weight: 500; letter-spacing: -0.015em; }
+.h1 { font-size: 120px; line-height: 1.02; }
+.h2 { font-size: 84px; line-height: 1.06; }
+.h3 { font-size: 54px; line-height: 1.1; }
+.p  { font-size: 38px; line-height: 1.4; color: var(--soft); }
+.brand { color: var(--deep); }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 16px 30px; border-radius: 999px; background: var(--card); box-shadow: 0 0 0 2px rgba(26,26,26,.08); font-size: 34px; font-weight: 500; }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+#corner { position: absolute; left: 72px; top: 44px; height: 84px; opacity: 0; }
+#bar { position: absolute; left: 0; bottom: 0; height: 8px; width: 100%; background: var(--brand); transform-origin: left; transform: scaleX(0); }
+/* teléfono */
+#phone { position: absolute; left: 1230px; top: 64px; width: 452px; height: 952px; border-radius: 76px; background: #14120F; padding: 16px; box-shadow: 0 50px 90px rgba(26,26,26,.22), 0 0 0 3px #2A2622 inset; opacity: 0; }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 60px; overflow: hidden; background: var(--paper); }
+#screen > * { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; }
+#screen img { object-fit: cover; object-position: top; }
+.ring { position: absolute; border-radius: 22px; border: 5px solid var(--brand); opacity: 0; box-shadow: 0 0 0 0 rgba(232,71,31,.4); }
+.rule-card { position: absolute; top: 330px; width: 790px; height: 620px; border-radius: 40px; background: var(--card); box-shadow: 0 0 0 2px rgba(26,26,26,.08); padding: 56px; }
+.cell { position: absolute; border-radius: 12px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="corner" src="assets/logo-mth.png" alt="" />
+  <div id="bar"></div>
+
+  <!-- 1. Título -->
+  <section class="scene" id="s1">
+    <img id="s1logo" class="abs" src="assets/logo-mth.png" style="left:810px;top:150px;height:300px" alt="" />
+    <h1 id="s1title" class="abs h1" style="left:0;width:1920px;top:480px;text-align:center"></h1>
+    <p id="s1sub" class="abs p" style="left:0;width:1920px;top:800px;text-align:center">Ejercicio A · Registro de tiempo y actividades</p>
+    <div id="s1line" class="abs" style="left:880px;top:770px;width:160px;height:6px;border-radius:3px;background:var(--brand);transform-origin:center"></div>
+  </section>
+
+  <!-- 2. El tiempo es finito -->
+  <section class="scene" id="s2">
+    <div class="abs h2" id="s2a" style="left:120px;top:330px;width:900px">El tiempo es el recurso más caro.</div>
+    <div class="abs h2" id="s2b" style="left:120px;top:330px;width:900px">El más escaso. <span class="brand">No se renueva.</span></div>
+    <div class="abs h2" id="s2c" style="left:120px;top:330px;width:900px">Todos los días <span class="brand">morimos un poco.</span></div>
+    <div class="abs h3" id="s2d" style="left:120px;top:330px;width:900px;color:var(--soft)">¿Alguna vez has pensado en la finitud de tu existencia?</div>
+    <div id="s2dots" class="abs" style="left:1060px;top:190px;width:740px;height:700px"></div>
+    <p id="s2cap" class="abs p" style="left:1060px;top:900px;width:740px;text-align:center;font-size:30px;color:var(--muted)">24 horas. Cada día.</p>
+  </section>
+
+  <!-- 3. La pregunta base -->
+  <section class="scene" id="s3">
+    <div class="abs h2" id="s3a" style="left:120px;top:300px;width:1000px">Saber en qué <span class="brand">empleas tu tiempo</span></div>
+    <div class="abs h3" id="s3b" style="left:120px;top:560px;width:1000px;color:var(--soft)">es la pregunta básica para entender cómo gestionas cualquier cosa.</div>
+    <svg id="s3clock" class="abs" style="left:1230px;top:230px" width="580" height="580" viewBox="0 0 580 580">
+      <circle cx="290" cy="290" r="270" fill="#FBF8F2" stroke="#1A1A1A" stroke-width="6"/>
+      <g id="ticks"></g>
+      <g id="hand" style="transform-origin:290px 290px"><rect x="284" y="62" width="12" height="238" rx="6" fill="#E8471F"/></g>
+      <circle cx="290" cy="290" r="18" fill="#1A1A1A"/>
+    </svg>
+  </section>
+
+  <!-- 4. Qué vamos a hacer -->
+  <section class="scene" id="s4">
+    <div class="abs h2" id="s4a" style="left:120px;top:150px">¿Qué vamos a hacer?</div>
+    <div class="abs h3" id="s4b" style="left:120px;top:290px;width:1500px;color:var(--soft);font-weight:400">Un registro de todo lo que haces, momento a momento.</div>
+    <div id="s4grid" class="abs" style="left:120px;top:470px;width:1680px;height:200px"></div>
+    <div class="abs p" id="s4t0" style="left:120px;top:690px;font-size:30px;color:var(--muted)">6:00 a.m.</div>
+    <div class="abs p" id="s4t1" style="left:1580px;top:690px;width:220px;text-align:right;font-size:30px;color:var(--muted)">10:00 p.m.</div>
+    <div class="abs" id="s4leg" style="left:120px;top:770px;display:flex;gap:26px;flex-wrap:wrap;width:1700px"></div>
+  </section>
+
+  <!-- 5. Reglas -->
+  <section class="scene" id="s5">
+    <div class="abs h2" id="s5t" style="left:120px;top:170px">Dos reglas simples</div>
+    <div class="rule-card" id="s5c1" style="left:120px">
+      <div class="jost" style="font-size:64px;line-height:1.1">Registro <span class="brand">ingenuo</span></div>
+      <p class="p" style="margin-top:28px">Sin otro propósito que hacer el ejercicio. Anota lo que haces, sin juzgarlo.</p>
+      <div style="margin-top:56px;display:flex;gap:16px;flex-wrap:wrap" id="s5words"></div>
+    </div>
+    <div class="rule-card" id="s5c2" style="left:1010px">
+      <div class="jost" style="font-size:64px;line-height:1.1">Si no registraste, <span class="brand">dilo</span></div>
+      <div id="s5row" style="margin-top:44px;display:flex;align-items:center;gap:30px;padding:26px 0;border-top:2px solid var(--line);border-bottom:2px solid var(--line)">
+        <span style="font-size:30px;color:var(--muted)">8:00 – 8:30 a.m.</span>
+        <span style="font-size:38px;color:var(--muted)">No registré</span>
+      </div>
+      <div style="position:relative;margin-top:44px;display:inline-block">
+        <span class="jost" style="font-size:56px;color:var(--muted)">Hacer recuento</span>
+        <div id="s5strike" style="position:absolute;left:-10px;right:-10px;top:50%;height:8px;border-radius:4px;background:var(--brand);transform-origin:left"></div>
+      </div>
+      <p class="p" id="s5nota" style="margin-top:20px">No hagas recuento: escribe «no registré».</p>
+    </div>
+  </section>
+
+  <!-- 6. Título de sección -->
+  <section class="scene" id="s6">
+    <div class="abs h1" id="s6a" style="left:0;width:1920px;top:340px;text-align:center">Así se usa el portal</div>
+    <div class="abs p" id="s6b" style="left:0;width:1920px;top:560px;text-align:center">Seis pasos, desde tu teléfono.</div>
+  </section>
+
+  <!-- Textos de los pasos (junto al teléfono) -->
+  <section class="scene" id="s7"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 1</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Ábrelo desde tu pantalla de inicio</div>
+    <div class="abs" id="s7steps" style="left:120px;top:560px;width:960px;display:flex;flex-direction:column;gap:22px"></div></section>
+
+  <section class="scene" id="s8"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 2</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Entra con tu correo</div>
+    <p class="abs p" style="left:120px;top:440px;width:900px">Usa el código de acceso del curso la primera vez. Después la sesión se queda abierta.</p></section>
+
+  <section class="scene" id="s9"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 3</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Cuéntanos cómo duermes</div>
+    <div class="abs p" id="s9a" style="left:120px;top:520px;width:900px;font-size:44px;color:var(--ink)">La primera vez: tu <b>horario habitual</b> de sueño.</div>
+    <div class="abs p" id="s9b" style="left:120px;top:520px;width:900px;font-size:44px;color:var(--ink)">Cada mañana: <b>¿cuánto dormiste?</b></div>
+    <div class="abs p" id="s9c" style="left:120px;top:520px;width:900px;font-size:44px;color:var(--ink)">Así cada día suma <b class="brand">24 horas</b>.</div></section>
+
+  <section class="scene" id="s10"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 4</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Registra cada media hora</div>
+    <div class="abs p" id="s10a" style="left:120px;top:520px;width:900px;font-size:44px;color:var(--ink)">Toca el <b>botón grande</b>.</div>
+    <div class="abs p" id="s10b" style="left:120px;top:520px;width:900px;font-size:44px;color:var(--ink)">Cuenta <b>qué hiciste</b>, específicamente.</div>
+    <div class="abs" id="s10c" style="left:120px;top:520px;display:flex;flex-direction:column;gap:20px;align-items:flex-start"></div></section>
+
+  <section class="scene" id="s11"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 5</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Activa los recordatorios</div>
+    <p class="abs p" style="left:120px;top:440px;width:900px">Te avisamos en cada :00 y :30. Toca el aviso y registra al instante.</p></section>
+
+  <section class="scene" id="s12"><div class="abs jost" style="left:120px;top:220px;font-size:36px;color:var(--deep)">Paso 6</div>
+    <div class="abs h2" style="left:120px;top:290px;width:960px">Cierra la semana</div>
+    <p class="abs p" style="left:120px;top:440px;width:900px">Tu <b>estado de resultados</b>: dónde invertiste, dónde gastaste y cuánto dormiste.</p></section>
+
+  <!-- 13. Meta -->
+  <section class="scene" id="s13">
+    <div class="abs h2" id="s13a" style="left:120px;top:170px">Tu meta</div>
+    <div class="abs h3" id="s13b" style="left:120px;top:310px;width:1000px;font-weight:400;color:var(--soft)"><b style="font-weight:600;color:var(--ink)">14 días</b> de registro.</div>
+    <div class="abs h3" id="s13c" style="left:120px;top:410px;width:1000px;font-weight:400;color:var(--soft)">Si llegas a <b style="font-weight:600;color:var(--ink)">21</b>, será un gran trabajo.</div>
+    <div class="abs h3" id="s13d" style="left:120px;top:510px;width:1000px;font-weight:400;color:var(--soft)">Por ahora, cumple <b class="brand" style="font-weight:600">los primeros 7</b>.</div>
+    <div id="s13grid" class="abs" style="left:1170px;top:300px;width:690px;height:340px"></div>
+    <div id="s13l1" class="abs p" style="left:1170px;top:690px;width:690px;font-size:34px;color:var(--ink)">Días 1 al 7 · por ahora</div>
+    <div id="s13l2" class="abs p" style="left:1170px;top:690px;width:690px;font-size:34px;color:var(--ink)">Días 8 al 14 · la meta</div>
+    <div id="s13l3" class="abs p" style="left:1170px;top:690px;width:690px;font-size:34px;color:var(--ink)">Días 15 al 21 · un gran trabajo</div>
+  </section>
+
+  <!-- 14. Cierre -->
+  <section class="scene" id="s14">
+    <img id="s14logo" class="abs" src="assets/logo-mth.png" style="left:810px;top:170px;height:300px" alt="" />
+    <div class="abs h1" id="s14a" style="left:0;width:1920px;top:520px;text-align:center">Empieza hoy.</div>
+    <div class="abs p" id="s14b" style="left:0;width:1920px;top:700px;text-align:center;font-size:44px">Anota tu primera media hora.</div>
+  </section>
+
+  <!-- Teléfono -->
+  <div id="phone"><div id="screen">
+    <div id="sc-home">
+      <div style="position:absolute;inset:0;background:linear-gradient(160deg,#EFE3D3,#D9C9B6 45%,#C7B8A8)"></div>
+      <div id="homegrid" style="position:absolute;left:34px;right:34px;top:120px;display:grid;grid-template-columns:repeat(4,1fr);gap:34px 22px"></div>
+      <div style="position:absolute;left:34px;right:34px;bottom:50px;height:130px;border-radius:44px;background:rgba(255,255,255,.35)"></div>
+      <div id="appicon" style="position:absolute;left:50%;margin-left:-68px;top:520px;width:136px;text-align:center">
+        <img src="assets/icon-180.png" style="width:136px;height:136px;border-radius:32px;box-shadow:0 10px 24px rgba(0,0,0,.2)" alt="" />
+        <div style="margin-top:10px;font-size:22px;font-weight:600;color:#1A1A1A">Mi Tiempo</div>
+        <div id="tap" style="position:absolute;left:-18px;top:-18px;width:172px;height:172px;border-radius:50%;border:6px solid var(--brand);opacity:0"></div>
+      </div>
+    </div>
+    <img id="sc-login" src="assets/login.png" alt="" />
+    <img id="sc-perfil" src="assets/perfil.png" alt="" />
+    <img id="sc-sueno" src="assets/sueno.png" alt="" />
+    <img id="sc-homeapp" src="assets/home.png" alt="" />
+    <img id="sc-editor" src="assets/editor.png" alt="" />
+    <img id="sc-estado" src="assets/estado.png" alt="" />
+    <div class="ring" id="ring-login" style="left:7%;top:73.5%;width:86%;height:7%;opacity:0"></div>
+    <div class="ring" id="ring-cta" style="left:5%;top:90%;width:90%;height:8%;opacity:0"></div>
+    <div id="notif" style="position:absolute;left:24px;right:24px;top:36px;border-radius:34px;background:rgba(255,255,255,.94);box-shadow:0 14px 40px rgba(0,0,0,.2);padding:22px 24px;width:auto;height:auto;display:flex;gap:18px;align-items:flex-start;opacity:0">
+      <img src="assets/icon-180.png" style="width:64px;height:64px;border-radius:15px;position:static;opacity:1" alt="" />
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:20px;color:#6b6b6b"><b style="color:#1A1A1A;font-weight:600">La Contabilidad de tu Tiempo</b><span>ahora</span></div>
+      <div style="margin-top:6px;font-size:23px;line-height:1.3;color:#1A1A1A">¿Qué hiciste de 8:00 a.m. – 8:30 a.m.?</div></div>
+    </div>
+  </div></div>
+</div>
+
+<script>
+const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)'
+const $ = (s) => document.querySelector(s)
+const el = (tag, css = '', html = '', parent) => { const e = document.createElement(tag); if (css) e.style.cssText = css; e.innerHTML = html; if (parent) parent.appendChild(e); return e }
+const A = (e, kf, at, dur = 0.7, ease = EASE, fill = 'both') => e.animate(kf, { delay: at * 1000, duration: dur * 1000, fill, easing: ease })
+const up = (e, at, dur = 0.8) => A(e, [{ opacity: 0, transform: 'translateY(46px)' }, { opacity: 1, transform: 'none' }], at, dur)
+const fade = (e, at, dur = 0.5) => A(e, [{ opacity: 0 }, { opacity: 1 }], at, dur, 'ease-out')
+const gone = (e, at, dur = 0.4) => A(e, [{ opacity: 1 }, { opacity: 0 }], at, dur, 'ease-in', 'forwards')
+const pop = (e, at, dur = 0.5) => A(e, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], at, dur)
+const scene = (id, start, end, f = 0.45) => A($(id), [{ opacity: 0, offset: 0 }, { opacity: 1, offset: f / (end - start) }, { opacity: 1, offset: 1 - f / (end - start) }, { opacity: 0, offset: 1 }], start, end - start, 'linear')
+const DUR = 118
+
+// barra de progreso + logo de esquina
+A($('#bar'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 0, DUR, 'linear')
+const vis = [[0, 0], [7, 0], [7.6, 1], [49.2, 1], [49.8, 0], [102.4, 0], [103, 1], [111.8, 1], [112.4, 0], [DUR, 0]]
+A($('#corner'), vis.map(([t, o]) => ({ opacity: o, offset: t / DUR })), 0, DUR, 'linear')
+
+// 1 · título
+scene('#s1', 0, 7, 0.4)
+const t1 = $('#s1title'); 'La contabilidad de tu tiempo'.split(' ').forEach((w, i) => { const s = el('span', 'display:inline-block;margin:0 .16em', w, t1); up(s, 0.9 + i * 0.14, 0.9) })
+up($('#s1logo'), 0.2, 1); A($('#s1line'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 2.2, 0.8); fade($('#s1sub'), 2.8, 0.8)
+$('#s1line').style.top = '770px'
+
+// 2 · finitud
+scene('#s2', 7, 17.2)
+up($('#s2a'), 7.5); gone($('#s2a'), 10.2)
+up($('#s2b'), 10.6); gone($('#s2b'), 13.4)
+up($('#s2c'), 13.8); gone($('#s2c'), 16.0)
+fade($('#s2d'), 16.0, 0.5)
+const dots = $('#s2dots')
+for (let i = 0; i < 24; i++) {
+  const c = i % 6, r = Math.floor(i / 6), d = el('div', `position:absolute;left:${c * 124 + 10}px;top:${r * 124 + 40}px;width:96px;height:96px;border-radius:50%;background:var(--brand)`, '', dots)
+  pop(d, 7.8 + i * 0.05, 0.5)
+  A(d, [{ background: '#E8471F', transform: 'scale(1)' }, { background: '#E0D7C6', transform: 'scale(.82)' }], 10.4 + i * 0.22, 0.6, 'ease-out', 'forwards')
+}
+fade($('#s2cap'), 8.4)
+
+// 3 · pregunta base
+scene('#s3', 17, 27.2)
+up($('#s3a'), 17.6); up($('#s3b'), 19.4)
+const ticks = $('#ticks'); for (let i = 0; i < 12; i++) { const a = i * 30; el('div', '', '', null); const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); r.setAttribute('x', 286); r.setAttribute('y', 34); r.setAttribute('width', 8); r.setAttribute('height', i % 3 ? 22 : 40); r.setAttribute('rx', 4); r.setAttribute('fill', '#1A1A1A'); r.setAttribute('transform', `rotate(${a} 290 290)`); ticks.appendChild(r) }
+fade($('#s3clock'), 17.6, 0.8)
+A($('#hand'), [{ transform: 'rotate(0deg)' }, { transform: 'rotate(720deg)' }], 18, 8.4, 'cubic-bezier(.45,.05,.55,.95)')
+
+// 4 · qué vamos a hacer
+scene('#s4', 27, 40.2)
+up($('#s4a'), 27.5); up($('#s4b'), 28.6)
+const cols = ['#E8471F', '#D9A441', '#3F7F86']; const seq = [0,0,0,2,2,0,0,0,0,1,0,0,2,2,2,0,0,0,0,0,1,2,0,0,0,0,2,2,0,0,0,1]
+const grid = $('#s4grid')
+seq.forEach((k, i) => {
+  const c = i % 16, r = Math.floor(i / 16)
+  const cell = el('div', `position:absolute;left:${c * 105}px;top:${r * 106}px;width:96px;height:96px;border-radius:18px;background:#EFE8DB`, '', grid)
+  A(cell, [{ background: '#EFE8DB', transform: 'scale(1)' }, { background: cols[k], transform: 'scale(1.08)', offset: .5 }, { background: cols[k], transform: 'scale(1)' }], 29.4 + i * 0.1, 0.5, 'ease-out')
+  A(cell, [{ opacity: 0 }, { opacity: 1 }], 29 + i * 0.03, 0.3, 'ease-out', 'both')
+})
+fade($('#s4t0'), 29.4); fade($('#s4t1'), 32.6)
+const leg = $('#s4leg')
+;[['Mínimo cada 30 minutos', '#E8471F'], ['Si puedes, cada 15', '#D9A441'], ['Trabajo y vida personal: todo cuenta', '#3F7F86']].forEach(([t, c], i) => {
+  const ch = el('div', '', `<span class="dot" style="background:${c}"></span>${t}`, leg); ch.className = 'chip'; up(ch, 34.2 + i * 1.6, 0.7)
+})
+
+// 5 · reglas
+scene('#s5', 40, 50.2)
+up($('#s5t'), 40.4); up($('#s5c1'), 41.0, 0.9); up($('#s5c2'), 41.6, 0.9)
+;['trabajo', 'familia', 'descanso', 'estudio', 'ocio'].forEach((w, i) => { const c = el('span', '', w, $('#s5words')); c.className = 'chip'; c.style.cssText = 'font-size:28px;padding:12px 24px'; pop(c, 43 + i * 0.25, 0.4) })
+fade($('#s5row'), 43.4)
+A($('#s5strike'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 45.8, 0.5, EASE); fade($('#s5nota'), 46.6)
+
+// 6 · título sección
+scene('#s6', 49.6, 55.3)
+up($('#s6a'), 50.0, 0.9); up($('#s6b'), 50.8, 0.8)
+
+// teléfono (55 → 102)
+A($('#phone'), [{ opacity: 0, transform: 'translateX(140px) rotate(3deg)' }, { opacity: 1, transform: 'none' }], 54.6, 1.0)
+A($('#phone'), [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(140px)' }], 101.6, 0.6, 'ease-in', 'forwards')
+const show = (id, a, b, slide = true, fill = 'both') => { const e = $(id); A(e, [{ opacity: 0, transform: slide ? 'translateY(30px)' : 'none' }, { opacity: 1, transform: 'none' }], a, 0.55, EASE, fill); gone(e, b, 0.4) }
+const ring = (id, at, count = 3) => $(id).animate([{ opacity: 0, boxShadow: '0 0 0 0 rgba(232,71,31,.45)' }, { opacity: 1, offset: .15 }, { opacity: 1, boxShadow: '0 0 0 26px rgba(232,71,31,0)', offset: .8 }, { opacity: 0, boxShadow: '0 0 0 26px rgba(232,71,31,0)' }], { delay: at * 1000, duration: 1000, iterations: count, fill: 'both', easing: 'ease-out' })
+
+// 7 · instalar
+scene('#s7', 55, 62.2)
+show('#sc-home', 55.2, 62.0)
+const hg = $('#homegrid'); const names = ['Mensajes', 'Fotos', 'Mapas', 'Notas', 'Reloj', 'Clima', 'Correo', 'Música']
+names.forEach((n, i) => el('div', 'text-align:center;font-size:19px;color:#3A3631', `<div style="width:92px;height:92px;margin:0 auto 8px;border-radius:24px;background:rgba(255,255,255,.55)"></div>${n}`, hg))
+const steps = $('#s7steps')
+;['Abre el enlace en <b>Safari</b>', 'Toca <b>Compartir</b>', 'Elige <b>Añadir a pantalla de inicio</b>'].forEach((t, i) => { const r = el('div', 'display:flex;align-items:center;gap:22px;font-size:40px;color:var(--ink)', `<span class="jost" style="width:64px;height:64px;border-radius:50%;background:var(--tint);color:var(--deep);display:grid;place-items:center;font-size:34px">${i + 1}</span><span>${t}</span>`, steps); up(r, 56.2 + i * 1.3, 0.7) })
+$('#tap').animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'scale(1)', offset: .3 }, { opacity: 0, transform: 'scale(1.3)' }], { delay: 59600, duration: 1200, iterations: 2, fill: 'both', easing: 'ease-out' })
+
+// 8 · login
+scene('#s8', 62, 69.2)
+show('#sc-login', 62.2, 69.0)
+ring('#ring-login', 65.6, 3)
+
+// 9 · sueño
+scene('#s9', 69, 78.2)
+show('#sc-perfil', 69.2, 73.6); show('#sc-sueno', 73.4, 78.0)
+up($('#s9a'), 69.8); gone($('#s9a'), 73.4)
+up($('#s9b'), 73.8); gone($('#s9b'), 76.4)
+up($('#s9c'), 76.6)
+
+// 10 · registro
+scene('#s10', 78, 88.2)
+show('#sc-homeapp', 78.2, 82.6); show('#sc-editor', 82.4, 88.0)
+ring('#ring-cta', 79.6, 2)
+up($('#s10a'), 78.8); gone($('#s10a'), 82.2)
+up($('#s10b'), 82.6); gone($('#s10b'), 84.6)
+const cats = $('#s10c')
+;[['Inversión', '#E8471F', 'trabajo, estudio, metas'], ['Gasto corriente', '#D9A441', 'ocio, redes, distracción'], ['Mantenimiento', '#3F7F86', 'comer, aseo, traslados']].forEach(([t, c, h], i) => {
+  const ch = el('div', 'font-size:34px', `<span class="dot" style="background:${c}"></span><b>${t}</b><span style="color:var(--muted);font-weight:400">${h}</span>`, cats); ch.className = 'chip'; up(ch, 84.8 + i * 0.9, 0.6)
+})
+
+// 11 · recordatorios
+scene('#s11', 88, 94.2)
+show('#sc-homeapp', 88.2, 94.0, false, 'forwards')
+A($('#notif'), [{ opacity: 0, transform: 'translateY(-140px)' }, { opacity: 1, transform: 'none' }], 89.2, 0.7)
+gone($('#notif'), 93.6)
+
+// 12 · estado de resultados
+scene('#s12', 94, 102.2)
+show('#sc-estado', 94.2, 102.0)
+
+// 13 · meta
+scene('#s13', 102, 112.2)
+up($('#s13a'), 102.5); up($('#s13b'), 103.6); up($('#s13c'), 105.6); up($('#s13d'), 107.8)
+const g = $('#s13grid')
+for (let i = 0; i < 21; i++) {
+  const c = i % 7, r = Math.floor(i / 7), grp = r
+  const cell = el('div', `position:absolute;left:${c * 98}px;top:${r * 98 + 10}px;width:84px;height:84px;border-radius:18px;background:#EFE8DB;display:grid;place-items:center;font-family:Jost;font-size:32px;font-weight:500;color:#726B61`, String(i + 1), g)
+  const colr = ['#E8471F', '#D9A441', '#3F7F86'][grp]
+  A(cell, [{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], 102.8 + i * 0.03, 0.4, 'ease-out')
+  const at = [104.0, 106.4, 108.8][grp] + c * 0.12
+  A(cell, [{ background: '#EFE8DB', color: '#726B61' }, { background: colr, color: '#FFFFFF' }], at, 0.4, 'ease-out')
+}
+fade($('#s13l1'), 104.4); gone($('#s13l1'), 106.2)
+fade($('#s13l2'), 106.8); gone($('#s13l2'), 108.6)
+fade($('#s13l3'), 109.2)
+
+// 14 · cierre
+scene('#s14', 112, 118, 0.5)
+up($('#s14logo'), 112.5, 0.9); up($('#s14a'), 113.4, 0.9); up($('#s14b'), 114.6, 0.9)
+
+window.DURATION = DUR
+window.seek = (t) => { document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t * 1000 }) }
+window.seek(0)
+window.ready = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))))
+</script>
+</body>
+</html>

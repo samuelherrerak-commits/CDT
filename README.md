@@ -33,3 +33,6 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 - Las contraseñas se guardan con sal + hash (nunca en texto plano) y la sesión es un token firmado (HMAC) de 90 días que se renueva con cada uso.
 - Registrarse requiere el `CODIGO_ACCESO`, así solo entran los alumnos de la clase.
 - Los recordatorios (:00 y :30) funcionan con la app abierta o instalada como PWA en segundo plano. Con la app totalmente cerrada haría falta Web Push con servidor, que rompe el enfoque 100 % estático. En iPhone hay que "Añadir a pantalla de inicio" primero.
+
+## Video explicativo
+`video/la-contabilidad-de-tu-tiempo.mp4` (1920×1080, 2 min, sin audio). El código fuente es `video/index.html` (animación determinista) y `video/render.mjs` (renderiza los cuadros; luego `ffmpeg -framerate 30 -i frames/%05d.jpg -c:v libx264 -crf 19 -pix_fmt yuv420p out.mp4`). Las capturas del portal están en `video/assets/`.
