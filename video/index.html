@@ -50,10 +50,10 @@ h1, h2, h3, .jost { font-family: 'Jost', sans-serif; font-weight: 500; letter-sp
   <section class="scene" id="s2">
     <div class="abs h2" id="s2a" style="left:120px;top:330px;width:900px">El tiempo es el recurso más caro.</div>
     <div class="abs h2" id="s2b" style="left:120px;top:330px;width:900px">El más escaso. <span class="brand">No se renueva.</span></div>
-    <div class="abs h2" id="s2c" style="left:120px;top:330px;width:900px">Todos los días <span class="brand">morimos un poco.</span></div>
-    <div class="abs h3" id="s2d" style="left:120px;top:330px;width:900px;color:var(--soft)">¿Alguna vez has pensado en la finitud de tu existencia?</div>
+    <div class="abs h2" id="s2c" style="left:120px;top:330px;width:900px">Todos los días recibimos las mismas <span class="brand">24 horas.</span></div>
+    <div class="abs h3" id="s2d" style="left:120px;top:330px;width:900px;color:var(--soft)">¿Sabes en qué las estás usando?</div>
     <div id="s2dots" class="abs" style="left:1060px;top:190px;width:740px;height:700px"></div>
-    <p id="s2cap" class="abs p" style="left:1060px;top:900px;width:740px;text-align:center;font-size:30px;color:var(--muted)">24 horas. Cada día.</p>
+    <p id="s2cap" class="abs p" style="left:1060px;top:900px;width:740px;text-align:center;font-size:30px;color:var(--muted)">Cada día, 24 horas para ti.</p>
   </section>
 
   <!-- 3. La pregunta base -->
@@ -215,7 +215,7 @@ const dots = $('#s2dots')
 for (let i = 0; i < 24; i++) {
   const c = i % 6, r = Math.floor(i / 6), d = el('div', `position:absolute;left:${c * 124 + 10}px;top:${r * 124 + 40}px;width:96px;height:96px;border-radius:50%;background:var(--brand)`, '', dots)
   pop(d, 7.8 + i * 0.05, 0.5)
-  A(d, [{ background: '#E8471F', transform: 'scale(1)' }, { background: '#E0D7C6', transform: 'scale(.82)' }], 10.4 + i * 0.22, 0.6, 'ease-out', 'forwards')
+  A(d, [{ background: '#E8471F' }, { background: ['#E8471F', '#E8471F', '#E8471F', '#3F7F86', '#3F7F86', '#D9A441'][(i * 5 + (i >> 2)) % 6] }], 11.0 + i * 0.12, 0.5, 'ease-out', 'forwards')
 }
 fade($('#s2cap'), 8.4)
 
