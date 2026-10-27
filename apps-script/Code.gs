@@ -275,3 +275,25 @@ function verificarToken_(token) {
   if (+contenido[1] < Date.now()) throw new Error('Sesión expirada');
   return contenido[0];
 }
+
+/**
+ * RESTABLECER CONTRASEÑA DE UN ALUMNO.
+ * Solo se ejecuta a mano desde el editor de Apps Script (no hay acción web para esto).
+ * 1) Cambia EMAIL y NUEVA abajo. 2) Elige esta función en el menú y pulsa "Ejecutar".
+ * 3) Pásale la contraseña nueva al alumno; puede entrar con ella de inmediato.
+ * Después borra la contraseña del código.
+ */
+function restablecerPassword() {
+  var EMAIL = 'alumno@correo.com';
+  var NUEVA = 'CambiaEstaClave';
+
+  var email = normEmail_(EMAIL);
+  if (NUEVA.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
+  var ws = hoja_(HOJA_USUARIOS);
+  var fila = buscarUsuario_(ws, email);
+  if (!fila) throw new Error('No existe un usuario con el correo ' + email);
+
+  var sal = Utilities.getUuid();
+  ws.getRange(fila.index, 3, 1, 2).setValues([[sal, hash_(NUEVA, sal)]]);
+  Logger.log('Contraseña restablecida para ' + email);
+}
