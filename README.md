@@ -29,6 +29,11 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 - Cada mañana se pregunta "¿cuánto dormiste?" (hora de dormir y de despertar). Los bloques anteriores a despertar cuentan como sueño y no se piden.
 - El estado de resultados suma sueño + bloques de 06:00–22:00 + el hueco entre las 22:00 y la hora de acostarse, para que cada día sume 24 h.
 
+## Restablecer la contraseña de un alumno
+1. En la hoja **Usuarios**, borra **solo la celda de la columna D (HashPassword)** del alumno.
+2. Cuando el alumno intente entrar, la app le pedirá crear una contraseña nueva (con el código de acceso del curso). Listo.
+Mientras la celda esté vacía, la cuenta queda pendiente; las sesiones que el alumno ya tenía abiertas siguen activas.
+
 ## Notas
 - Las contraseñas se guardan con sal + hash (nunca en texto plano) y la sesión es un token firmado (HMAC) de 90 días que se renueva con cada uso.
 - Registrarse requiere el `CODIGO_ACCESO`, así solo entran los alumnos de la clase.

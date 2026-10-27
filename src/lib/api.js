@@ -60,7 +60,9 @@ export async function api(action, payload = {}) {
   const json = await res.json().catch(() => null)
   if (!json?.success) {
     const msg = json?.message || 'Error inesperado'
-    throw new ApiError(msg, /Sesión/.test(msg))
+    const err = new ApiError(msg, /Sesión/.test(msg))
+    err.needsPassword = !!json?.needsPassword
+    throw err
   }
   // Sesión deslizante: el servidor devuelve un token nuevo y lo guardamos.
   if (json.token && session) saveSession({ ...session, token: json.token })

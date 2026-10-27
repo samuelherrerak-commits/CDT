@@ -51,6 +51,7 @@ function doPost(e) {
     switch (data.action) {
       case 'registro':   return json_(registro_(data));
       case 'login':      return json_(login_(data));
+      case 'nueva_password': return json_(nuevaPassword_(data));
       case 'guardar':    return json_(guardar_(data));
       case 'eliminar':   return json_(eliminar_(data));
       case 'registros':  return json_(listar_(data));
@@ -88,8 +89,30 @@ function registro_(d) {
 function login_(d) {
   var email = normEmail_(d.email);
   var fila = buscarUsuario_(hoja_(HOJA_USUARIOS), email);
+  // Contraseña borrada en la hoja por la profesora: la app pide crear una nueva (ver nuevaPassword_).
+  if (fila && String(fila.row[3]).trim() === '') return { success: false, needsPassword: true, message: 'Crea tu nueva contraseña' };
   // Mismo mensaje para "no existe" y "contraseña incorrecta".
   if (!fila || hash_(String(d.password || ''), fila.row[2]) !== fila.row[3]) return fail_('Credenciales inválidas');
+  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), token: crearToken_(email) };
+}
+
+/**
+ * Restablecer contraseña: la profesora borra la celda HashPassword (columna D) del alumno en la hoja.
+ * Mientras esté vacía, el alumno puede fijar una nueva, pero SOLO con el código de acceso del curso.
+ */
+function nuevaPassword_(d) {
+  var email = normEmail_(d.email);
+  var password = String(d.password || '');
+  if (password.length < 6) return fail_('La contraseña debe tener al menos 6 caracteres');
+  var esperado = PropertiesService.getScriptProperties().getProperty('CODIGO_ACCESO');
+  if (!esperado || String(d.codigo || '').trim() !== esperado) return fail_('Código de acceso incorrecto');
+
+  var ws = hoja_(HOJA_USUARIOS);
+  var fila = buscarUsuario_(ws, email);
+  if (!fila || String(fila.row[3]).trim() !== '') return fail_('Esta cuenta no está pendiente de una contraseña nueva');
+
+  var sal = Utilities.getUuid();
+  ws.getRange(fila.index, 3, 1, 2).setValues([[sal, hash_(password, sal)]]);
   return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), token: crearToken_(email) };
 }
 
@@ -276,24 +299,3 @@ function verificarToken_(token) {
   return contenido[0];
 }
 
-/**
- * RESTABLECER CONTRASEÑA DE UN ALUMNO.
- * Solo se ejecuta a mano desde el editor de Apps Script (no hay acción web para esto).
- * 1) Cambia EMAIL y NUEVA abajo. 2) Elige esta función en el menú y pulsa "Ejecutar".
- * 3) Pásale la contraseña nueva al alumno; puede entrar con ella de inmediato.
- * Después borra la contraseña del código.
- */
-function restablecerPassword() {
-  var EMAIL = 'alumno@correo.com';
-  var NUEVA = 'CambiaEstaClave';
-
-  var email = normEmail_(EMAIL);
-  if (NUEVA.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
-  var ws = hoja_(HOJA_USUARIOS);
-  var fila = buscarUsuario_(ws, email);
-  if (!fila) throw new Error('No existe un usuario con el correo ' + email);
-
-  var sal = Utilities.getUuid();
-  ws.getRange(fila.index, 3, 1, 2).setValues([[sal, hash_(NUEVA, sal)]]);
-  Logger.log('Contraseña restablecida para ' + email);
-}

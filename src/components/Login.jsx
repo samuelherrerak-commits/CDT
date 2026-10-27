@@ -10,23 +10,26 @@ const rise = (i) => ({ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y:
 
 export default function Login({ onLogin }) {
   const [modo, setModo] = useState('login')
-  const [form, setForm] = useState({ nombre: '', email: '', password: '', codigo: '' })
+  const [form, setForm] = useState({ nombre: '', email: '', password: '', confirmar: '', codigo: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const esRegistro = modo === 'registro'
+  const esNueva = modo === 'nueva' // la profesora borró su contraseña en la hoja
 
   async function submit(e) {
     e.preventDefault()
     setError('')
+    if (esNueva && form.password !== form.confirmar) return setError('Las contraseñas no coinciden')
     setLoading(true)
     try {
-      const res = await api(esRegistro ? 'registro' : 'login', form)
+      const res = await api(esNueva ? 'nueva_password' : esRegistro ? 'registro' : 'login', form)
       const session = { token: res.token, name: res.name, email: res.email }
       saveSession(session)
       onLogin(session)
     } catch (err) {
-      setError(err.message)
+      if (err.needsPassword) { setModo('nueva'); setForm((f) => ({ ...f, password: '', confirmar: '' })) }
+      else setError(err.message)
     } finally {
       setLoading(false)
     }
@@ -45,26 +48,28 @@ export default function Login({ onLogin }) {
 
       <motion.form {...rise(3)} onSubmit={submit} className="mt-9 space-y-3">
         <AnimatePresence initial={false}>
-          {esRegistro && (
-            <motion.div key="reg" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease }} className="-m-0.5 space-y-3 overflow-hidden p-0.5">
-              <input className={field} placeholder="Nombre" autoComplete="name" required value={form.nombre} onChange={set('nombre')} />
+          {(esRegistro || esNueva) && (
+            <motion.div key="reg" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease }} className="-m-0.5 space-y-3 overflow-hidden p-0.5 pb-3.5">
+              {esNueva && <p className="px-0.5 pb-1 text-[15px] leading-relaxed text-zinc-600 text-pretty">Tu contraseña fue restablecida. Crea una nueva con el código de acceso del curso.</p>}
+              {esRegistro && <input className={field} placeholder="Nombre" autoComplete="name" required value={form.nombre} onChange={set('nombre')} />}
               <input className={field} placeholder="Código de acceso del curso" required value={form.codigo} onChange={set('codigo')} />
             </motion.div>
           )}
         </AnimatePresence>
         <input className={field} type="email" placeholder="Correo" autoComplete="email" required value={form.email} onChange={set('email')} />
-        <input className={field} type="password" placeholder="Contraseña" autoComplete={esRegistro ? 'new-password' : 'current-password'} minLength={6} required value={form.password} onChange={set('password')} />
+        <input className={field} type="password" placeholder="Contraseña" autoComplete={esRegistro || esNueva ? 'new-password' : 'current-password'} minLength={6} required value={form.password} onChange={set('password')} />
+        {esNueva && <input className={field} type="password" placeholder="Repite la contraseña" autoComplete="new-password" minLength={6} required value={form.confirmar} onChange={set('confirmar')} />}
 
         <p role="alert" className="min-h-5 text-sm text-brand-deep">{error}</p>
 
         <button disabled={loading} className="btn-press flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-deep font-medium text-white hover:bg-brand-deep/90 disabled:opacity-60">
           {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          {esRegistro ? 'Crear cuenta' : 'Entrar'}
+          {esNueva ? 'Guardar y entrar' : esRegistro ? 'Crear cuenta' : 'Entrar'}
         </button>
       </motion.form>
 
-      <motion.button {...rise(4)} type="button" onClick={() => { setModo(esRegistro ? 'login' : 'registro'); setError('') }} className="mt-6 self-start text-sm text-zinc-500 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-900">
-        {esRegistro ? 'Ya tengo cuenta' : 'Primera vez · crear cuenta'}
+      <motion.button {...rise(4)} type="button" onClick={() => { setModo(esRegistro || esNueva ? 'login' : 'registro'); setError('') }} className="mt-6 self-start text-sm text-zinc-500 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-900">
+        {esRegistro || esNueva ? 'Ya tengo cuenta' : 'Primera vez · crear cuenta'}
       </motion.button>
     </main>
   )
