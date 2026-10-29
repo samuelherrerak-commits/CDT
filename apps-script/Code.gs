@@ -8,6 +8,7 @@
  *
  * Configuración (Configuración del proyecto > Propiedades de la secuencia de comandos):
  *   CODIGO_ACCESO  Código que la profesora comparte con sus alumnos para poder registrarse.
+ *   ADMIN_EMAILS   Correos del profesor/a (separados por comas) con acceso al panel de administración.
  *   (TOKEN_SECRET se genera automáticamente en setup()).
  */
 
@@ -17,6 +18,7 @@ var HOJA_SUENO = 'Sueno';
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
 var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
+var BLOQUES_DIA_COMPLETO = 24; // un día cuenta como "completo" con >= 24 de 32 bloques (75 %)
 
 /** Ejecutar UNA vez desde el editor para crear hojas y secretos. */
 function setup() {
@@ -36,6 +38,7 @@ function setup() {
   hojaSueno_();
 
   if (!props.getProperty('TOKEN_SECRET')) props.setProperty('TOKEN_SECRET', Utilities.getUuid() + Utilities.getUuid());
+  if (props.getProperty('ADMIN_EMAILS') === null) props.setProperty('ADMIN_EMAILS', '');
   if (!props.getProperty('CODIGO_ACCESO')) props.setProperty('CODIGO_ACCESO', 'CAMBIA-ESTE-CODIGO');
 }
 
@@ -52,6 +55,10 @@ function doPost(e) {
       case 'registro':   return json_(registro_(data));
       case 'login':      return json_(login_(data));
       case 'nueva_password': return json_(nuevaPassword_(data));
+      case 'admin_resumen':  return json_(adminResumen_(data));
+      case 'admin_alumno':   return json_(adminAlumno_(data));
+      case 'admin_reset':    return json_(adminReset_(data));
+      case 'admin_exportar': return json_(adminExportar_(data));
       case 'guardar':    return json_(guardar_(data));
       case 'eliminar':   return json_(eliminar_(data));
       case 'registros':  return json_(listar_(data));
@@ -83,7 +90,7 @@ function registro_(d) {
 
   var sal = Utilities.getUuid();
   ws.appendRow([email, nombre, sal, hash_(password, sal), new Date().toISOString()]);
-  return { success: true, name: nombre, email: email, perfil: null, token: crearToken_(email) };
+  return { success: true, name: nombre, email: email, perfil: null, admin: esAdmin_(email), token: crearToken_(email) };
 }
 
 function login_(d) {
@@ -93,7 +100,7 @@ function login_(d) {
   if (fila && String(fila.row[3]).trim() === '') return { success: false, needsPassword: true, message: 'Crea tu nueva contraseña' };
   // Mismo mensaje para "no existe" y "contraseña incorrecta".
   if (!fila || hash_(String(d.password || ''), fila.row[2]) !== fila.row[3]) return fail_('Credenciales inválidas');
-  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), token: crearToken_(email) };
+  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), admin: esAdmin_(email), token: crearToken_(email) };
 }
 
 /**
@@ -113,7 +120,7 @@ function nuevaPassword_(d) {
 
   var sal = Utilities.getUuid();
   ws.getRange(fila.index, 3, 1, 2).setValues([[sal, hash_(password, sal)]]);
-  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), token: crearToken_(email) };
+  return { success: true, name: fila.row[1], email: email, perfil: perfil_(fila.row), admin: esAdmin_(email), token: crearToken_(email) };
 }
 
 function guardar_(d) {
@@ -181,10 +188,14 @@ function guardarSueno_(d) {
 /** Devuelve los registros del usuario entre dos fechas (inclusive). El frontend calcula el estado de resultados. */
 function listar_(d) {
   var email = verificarToken_(d.token);
-  var desde = validarFecha_(d.desde);
-  var hasta = validarFecha_(d.hasta);
-  var filas = hoja_(HOJA_REGISTROS).getDataRange().getValues();
+  var r = datosDe_(email, validarFecha_(d.desde), validarFecha_(d.hasta));
+  return { success: true, data: r.data, sueno: r.sueno, perfil: r.perfil, admin: esAdmin_(email), token: crearToken_(email) }; // renueva la sesión
+}
+
+/** Registros, sueño y horario habitual de un usuario en un rango de fechas (ISO, inclusive). */
+function datosDe_(email, desde, hasta) {
   var out = [];
+  var filas = hoja_(HOJA_REGISTROS).getDataRange().getValues();
   for (var i = 1; i < filas.length; i++) {
     var r = filas[i];
     if (String(r[0]).toLowerCase() !== email) continue;
@@ -202,7 +213,117 @@ function listar_(d) {
     sueno.push({ fecha: f, dormir: horaTexto_(q[2]), despertar: horaTexto_(q[3]), minutos: Number(q[4]) });
   }
   var u = buscarUsuario_(hoja_(HOJA_USUARIOS), email);
-  return { success: true, data: out, sueno: sueno, perfil: u ? perfil_(u.row) : null, token: crearToken_(email) }; // renueva la sesión
+  return { data: out, sueno: sueno, perfil: u ? perfil_(u.row) : null };
+}
+
+/* ---------- Administración (profesor/a) ---------- */
+
+function admins_() {
+  var v = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS') || '';
+  return v.split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean);
+}
+function esAdmin_(email) { return admins_().indexOf(email) !== -1; }
+function requerirAdmin_(token) {
+  var email = verificarToken_(token);
+  if (!esAdmin_(email)) throw new Error('Sin permiso');
+  return email;
+}
+
+/** Una fila por alumno con sus métricas del rango [desde, hasta]; "días completos" se cuenta sobre todo el curso. */
+function adminResumen_(d) {
+  requerirAdmin_(d.token);
+  var desde = validarFecha_(d.desde), hasta = validarFecha_(d.hasta), hoy = validarFecha_(d.hoy);
+  var admins = admins_();
+
+  var alumnos = {}, orden = [];
+  var us = hoja_(HOJA_USUARIOS).getDataRange().getValues();
+  for (var i = 1; i < us.length; i++) {
+    var email = String(us[i][0]).toLowerCase();
+    if (!email || admins.indexOf(email) !== -1) continue;
+    alumnos[email] = { email: email, nombre: us[i][1], perfil: perfil_(us[i]), pendientePassword: String(us[i][3]).trim() === '',
+      bloques: 0, porCat: { inversion: 0, gasto: 0, mantenimiento: 0 }, suenoMin: 0, suenoDias: 0, ultimo: '', bloquesHoy: 0, _dias: {} };
+    orden.push(email);
+  }
+
+  var filas = hoja_(HOJA_REGISTROS).getDataRange().getValues();
+  for (var j = 1; j < filas.length; j++) {
+    var a = alumnos[String(filas[j][0]).toLowerCase()];
+    if (!a) continue;
+    var f = fechaTexto_(filas[j][1]);
+    a._dias[f] = (a._dias[f] || 0) + 1;
+    if (f > a.ultimo) a.ultimo = f;
+    if (f === hoy) a.bloquesHoy++;
+    if (f >= desde && f <= hasta) {
+      a.bloques++;
+      var c = filas[j][4];
+      if (a.porCat[c] !== undefined) a.porCat[c]++;
+    }
+  }
+
+  var fs = hojaSueno_().getDataRange().getValues();
+  for (var k = 1; k < fs.length; k++) {
+    var b = alumnos[String(fs[k][0]).toLowerCase()];
+    var fk = fechaTexto_(fs[k][1]);
+    if (!b || fk < desde || fk > hasta) continue;
+    b.suenoMin += Number(fs[k][4]) || 0;
+    b.suenoDias++;
+  }
+
+  var lista = orden.map(function (e) {
+    var x = alumnos[e], dias = Object.keys(x._dias), completos = 0;
+    dias.forEach(function (dia) { if (x._dias[dia] >= BLOQUES_DIA_COMPLETO) completos++; });
+    x.diasConActividad = dias.length;
+    x.diasCompletos = completos;
+    delete x._dias;
+    return x;
+  });
+  lista.sort(function (p, q) { return String(p.nombre).localeCompare(String(q.nombre)); });
+  return { success: true, alumnos: lista };
+}
+
+/** Los mismos datos que ve el alumno (registros, sueño, horario) para el rango pedido. */
+function adminAlumno_(d) {
+  requerirAdmin_(d.token);
+  var email = normEmail_(d.email);
+  if (!buscarUsuario_(hoja_(HOJA_USUARIOS), email)) return fail_('Alumno no encontrado');
+  var r = datosDe_(email, validarFecha_(d.desde), validarFecha_(d.hasta));
+  return { success: true, data: r.data, sueno: r.sueno, perfil: r.perfil };
+}
+
+/** Borra el hash: el alumno crea una contraseña nueva al entrar (ver nuevaPassword_). */
+function adminReset_(d) {
+  requerirAdmin_(d.token);
+  var email = normEmail_(d.email);
+  if (esAdmin_(email)) return fail_('Las cuentas de administrador se restablecen directamente en la hoja');
+  var ws = hoja_(HOJA_USUARIOS);
+  var fila = buscarUsuario_(ws, email);
+  if (!fila) return fail_('Alumno no encontrado');
+  ws.getRange(fila.index, 4).setValue('');
+  return { success: true };
+}
+
+/** Todos los registros y sueño de los alumnos en el rango, con nombre, para descargar en CSV. */
+function adminExportar_(d) {
+  requerirAdmin_(d.token);
+  var desde = validarFecha_(d.desde), hasta = validarFecha_(d.hasta);
+  var admins = admins_(), nombres = {};
+  var us = hoja_(HOJA_USUARIOS).getDataRange().getValues();
+  for (var i = 1; i < us.length; i++) nombres[String(us[i][0]).toLowerCase()] = us[i][1];
+
+  var registros = [], sueno = [];
+  var filas = hoja_(HOJA_REGISTROS).getDataRange().getValues();
+  for (var j = 1; j < filas.length; j++) {
+    var e = String(filas[j][0]).toLowerCase(), f = fechaTexto_(filas[j][1]);
+    if (admins.indexOf(e) !== -1 || f < desde || f > hasta) continue;
+    registros.push({ nombre: nombres[e] || '', email: e, fecha: f, hora: horaTexto_(filas[j][2]), actividad: filas[j][3], categoria: filas[j][4] });
+  }
+  var fs = hojaSueno_().getDataRange().getValues();
+  for (var k = 1; k < fs.length; k++) {
+    var e2 = String(fs[k][0]).toLowerCase(), f2 = fechaTexto_(fs[k][1]);
+    if (admins.indexOf(e2) !== -1 || f2 < desde || f2 > hasta) continue;
+    sueno.push({ nombre: nombres[e2] || '', email: e2, fecha: f2, dormir: horaTexto_(fs[k][2]), despertar: horaTexto_(fs[k][3]), minutos: Number(fs[k][4]) });
+  }
+  return { success: true, registros: registros, sueno: sueno };
 }
 
 /* ---------- Utilidades ---------- */

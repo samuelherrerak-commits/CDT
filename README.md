@@ -34,6 +34,12 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 2. Cuando el alumno intente entrar, la app le pedirá crear una contraseña nueva (con el código de acceso del curso). Listo.
 Mientras la celda esté vacía, la cuenta queda pendiente; las sesiones que el alumno ya tenía abiertas siguen activas.
 
+## Módulo de administrador (profesor/a)
+1. En Apps Script → **Configuración del proyecto → Propiedades de la secuencia de comandos**, crea o edita `ADMIN_EMAILS` con el correo del profesor (varios, separados por comas).
+2. Esa persona entra con su cuenta normal (créala con el código de acceso) y aterriza en el **Panel del grupo**. Desde ahí también puede ir a "Mi registro".
+3. El panel muestra el avance semanal por alumno, quién necesita atención, el detalle de cada alumno (estado de resultados y lo que anotó), restablecer contraseñas y exportar CSV.
+El permiso se verifica siempre en el servidor; las cuentas de administrador no aparecen en la lista de alumnos.
+
 ## Notas
 - Las contraseñas se guardan con sal + hash (nunca en texto plano) y la sesión es un token firmado (HMAC) de 90 días que se renueva con cada uso.
 - Registrarse requiere el `CODIGO_ACCESO`, así solo entran los alumnos de la clase.

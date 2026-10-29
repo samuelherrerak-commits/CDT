@@ -65,6 +65,6 @@ export async function api(action, payload = {}) {
     throw err
   }
   // Sesión deslizante: el servidor devuelve un token nuevo y lo guardamos.
-  if (json.token && session) saveSession({ ...session, token: json.token })
+  if (session && (json.token || json.admin !== undefined)) saveSession({ ...session, token: json.token || session.token, admin: json.admin ?? session.admin })
   return json
 }

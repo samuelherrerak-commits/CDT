@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster, toast } from 'sonner'
-import { LogOut, Moon, Plus } from 'lucide-react'
+import { LayoutDashboard, LogOut, Moon, Plus } from 'lucide-react'
 import { api, clearSession, getSession, readCache, writeCache, readLocal, writeLocal } from './lib/api'
 import { toMin, minutosDormidos } from './lib/sueno'
 import { addDays, formatDay, toISO, weekStart } from './lib/dates'
@@ -13,6 +13,7 @@ import DayView, { pendientesDeHoy } from './components/DayView'
 import ReminderBanner from './components/ReminderBanner'
 import SuenoSheet from './components/SuenoSheet'
 import PerfilSueno from './components/PerfilSueno'
+import Admin from './components/admin/Admin'
 import Editor from './components/Editor'
 import EstadoResultados from './components/EstadoResultados'
 
@@ -31,15 +32,29 @@ const TABS = [
 
 export default function App() {
   const [session, setSession] = useState(getSession)
+  const [vista, setVista] = useState(() => (getSession()?.admin ? 'admin' : 'alumno'))
+  const adminConocido = useRef(!!getSession()?.admin)
+
+  const logout = useCallback(() => { clearSession(); adminConocido.current = false; setSession(null) }, [])
+  const entrar = useCallback((s) => { adminConocido.current = !!s.admin; setVista(s.admin ? 'admin' : 'alumno'); setSession(s) }, [])
+  // El servidor es quien dice si la cuenta es de administrador (propiedad ADMIN_EMAILS); se refleja sin volver a entrar.
+  const onAdmin = useCallback((v) => {
+    setSession((s) => (s && !!s.admin !== v ? { ...s, admin: v } : s))
+    if (v && !adminConocido.current) setVista('admin')
+    adminConocido.current = v
+  }, [])
+
   return (
     <>
-      {session ? <Portal session={session} onLogout={() => { clearSession(); setSession(null) }} /> : <Login onLogin={setSession} />}
+      {!session ? <Login onLogin={entrar} />
+        : session.admin && vista === 'admin' ? <Admin session={session} onLogout={logout} onMiRegistro={() => setVista('alumno')} />
+        : <Portal session={session} onLogout={logout} onAdmin={onAdmin} onPanel={session.admin ? () => setVista('admin') : undefined} />}
       <Toaster position="top-center" theme="light" toastOptions={{ className: '!rounded-2xl !font-sans' }} />
     </>
   )
 }
 
-function Portal({ session, onLogout }) {
+function Portal({ session, onLogout, onAdmin, onPanel }) {
   const [tab, setTab] = useState('dia')
   const [dia, setDia] = useState(() => toISO(new Date()))
   // Se pinta al instante con lo último guardado en el teléfono y se sincroniza con la hoja después.
@@ -61,7 +76,7 @@ function Portal({ session, onLogout }) {
 
   const cargar = useCallback(async () => {
     try {
-      const { data, sueno: sn, perfil: pf } = await api('registros', { desde: semana, hasta: addDays(semana, 6) })
+      const { data, sueno: sn, perfil: pf, admin } = await api('registros', { desde: semana, hasta: addDays(semana, 6) })
       const fin = addDays(semana, 6)
       if (sn) setSueno((prev) => {
         const next = new Map([...prev].filter(([f]) => f < semana || f > fin))
@@ -69,6 +84,7 @@ function Portal({ session, onLogout }) {
         return next
       })
       if (pf !== undefined) setPerfil(pf)
+      if (admin !== undefined) onAdmin(admin)
       setSync(true)
       setRegistros((prev) => {
         const next = new Map([...prev].filter(([, r]) => r.fecha < semana || r.fecha > addDays(semana, 6)))
@@ -81,7 +97,7 @@ function Portal({ session, onLogout }) {
       setSinRed(true)
       if (e.auth) { toast.error('Tu sesión expiró, entra de nuevo'); onLogout() } else toast.error(e.message)
     }
-  }, [semana, onLogout])
+  }, [semana, onLogout, onAdmin])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -224,6 +240,7 @@ function Portal({ session, onLogout }) {
         <img src="/logo-mth.png" alt="MTH · Medición y Talento Humano" width="108" height="60" className="-ml-1.5 h-[60px] w-auto" />
         <div className="flex items-center gap-1">
           <span className="text-sm text-zinc-500">Hola, <span className="font-medium text-zinc-900">{session.name.split(' ')[0]}</span></span>
+          {onPanel && <IconBtn label="Panel del profesor" onClick={onPanel}><LayoutDashboard className="size-4" /></IconBtn>}
           <IconBtn label="Horario de sueño" onClick={() => setPerfilManual(true)}><Moon className="size-4" /></IconBtn>
           <IconBtn label="Cerrar sesión" onClick={onLogout}><LogOut className="size-4" /></IconBtn>
         </div>

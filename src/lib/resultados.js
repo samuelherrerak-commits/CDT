@@ -50,3 +50,15 @@ export function estadoResultados(registros, anyDay, now = new Date(), sueno = []
 
   return { capital, horas, sueno: horasSueno, sinRegistrar, registrados, porDia }
 }
+
+/** Bloques que ya debieron registrarse en la semana de `anyDay` (sin descontar sueño); base del % de cumplimiento. */
+export function bloquesEsperados(anyDay, now = new Date()) {
+  const hoy = toISO(now)
+  const minutosAhora = now.getHours() * 60 + now.getMinutes()
+  let n = 0
+  for (const d of weekDays(anyDay)) {
+    if (d < hoy) n += SLOTS.length
+    else if (d === hoy) n += SLOTS.filter((s) => s.start + 30 <= minutosAhora).length
+  }
+  return n
+}

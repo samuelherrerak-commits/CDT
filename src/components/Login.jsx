@@ -24,7 +24,7 @@ export default function Login({ onLogin }) {
     setLoading(true)
     try {
       const res = await api(esNueva ? 'nueva_password' : esRegistro ? 'registro' : 'login', form)
-      const session = { token: res.token, name: res.name, email: res.email }
+      const session = { token: res.token, name: res.name, email: res.email, admin: !!res.admin }
       saveSession(session)
       onLogin(session)
     } catch (err) {
