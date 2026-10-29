@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { currentSlot, SLOTS } from '../lib/slots'
+import { currentSlot } from '../lib/slots'
+import { toMin } from '../lib/sueno'
 
 const supported = () => typeof window !== 'undefined' && 'Notification' in window
 
@@ -69,9 +70,12 @@ export function useTimeNotifier({ enabled, needsReminder, onOpen, onWake, perfil
       if (m !== 0 && m !== 30) return
       const key = `${now.toDateString()}-${now.getHours()}:${m}`
       if (last.current === key) return
-      // Solo entre 06:30 y 22:00, que es cuando termina un bloque válido.
+      // Solo mientras está despierto/a según su horario habitual (sin perfil: 06:30–22:00). Nunca a medianoche en punto.
       const mins = now.getHours() * 60 + m
-      if (mins < SLOTS[0].start + 30 || mins > SLOTS.at(-1).start + 30) return
+      const p = perfilRef.current
+      const w = p ? toMin(p.despertar) : 360, b = p ? toMin(p.dormir) : 1320
+      const despierto = w < b ? mins > w && mins <= b : mins > w || mins <= b
+      if (!despierto || mins === 0) return
       last.current = key
       const prev = currentSlot(new Date(now.getTime() - 60_000))
       if (prev && !needsRef.current(prev.id)) return

@@ -1,6 +1,6 @@
 # La Contabilidad de tu Tiempo
 
-Portal estático (React + Vite + Tailwind + Framer Motion) para registrar el día en bloques de 30 min (06:00–22:00) y ver el **estado de resultados** semanal. Backend: Google Apps Script sobre una hoja de cálculo.
+Portal estático (React + Vite + Tailwind + Framer Motion) para registrar el día en bloques de 30 min que cubren las 24 horas (48 bloques) y ver el **estado de resultados** semanal. Backend: Google Apps Script sobre una hoja de cálculo.
 
 ## 1. Backend (Google Sheets + Apps Script)
 1. Crea una hoja de cálculo nueva → **Extensiones → Apps Script**.
@@ -27,7 +27,8 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 ## Sueño y días de 24 h
 - Al crear la cuenta se pide el horario habitual de sueño (se edita con el ícono de luna). Con él se avisa cuando toca acostarse y despertar.
 - Cada mañana se pregunta "¿cuánto dormiste?" (hora de dormir y de despertar). Los bloques anteriores a despertar cuentan como sueño y no se piden.
-- El estado de resultados suma sueño + bloques de 06:00–22:00 + el hueco entre las 22:00 y la hora de acostarse, para que cada día sume 24 h.
+- Los bloques que caen dentro del sueño anotado no se piden; el resto del día se registra normal. El estado de resultados suma sueño + bloques registrados + sin registrar, y cada día suma exactamente 24 h.
+- Los avisos de cada 30 min solo llegan mientras la persona está despierta según su horario habitual.
 
 ## Restablecer la contraseña de un alumno
 1. En la hoja **Usuarios**, borra **solo la celda de la columna D (HashPassword)** del alumno.

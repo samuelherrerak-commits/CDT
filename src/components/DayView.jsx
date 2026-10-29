@@ -5,19 +5,21 @@ import { SLOTS, catById } from '../lib/slots'
 import { addDays, formatDay, toISO } from '../lib/dates'
 import { fmtDur, fmtHora } from '../lib/sueno'
 
-/** Bloques de hoy que ya empezaron y siguen sin registro. */
-export const pendientesDeHoy = (registros, hoy, minutosAhora, despertarMin = 0) =>
-  SLOTS.filter((s) => s.start <= minutosAhora && s.start + 30 > despertarMin && !registros.has(`${hoy}|${s.id}`))
+/** Bloques de hoy que ya empezaron, no se pasaron dormidos y siguen sin registro. */
+export const pendientesDeHoy = (registros, hoy, minutosAhora, dormidos = new Set()) =>
+  SLOTS.filter((s) => s.start <= minutosAhora && !dormidos.has(s.id) && !registros.has(`${hoy}|${s.id}`))
 
-export default function DayView({ dia, setDia, registros, onPick, minutosAhora, sueno, onSueno, despertarMin }) {
+export default function DayView({ dia, setDia, registros, onPick, minutosAhora, sueno, onSueno, dormidos }) {
   const hoy = toISO(new Date())
   const esHoy = dia === hoy
   const [verHechos, setVerHechos] = useState(false)
   const hechos = SLOTS.filter((s) => registros.has(`${dia}|${s.id}`))
-  const pendientes = esHoy ? pendientesDeHoy(registros, hoy, minutosAhora, despertarMin) : []
+  const pendientes = esHoy ? pendientesDeHoy(registros, hoy, minutosAhora, dormidos) : []
 
   // Hoy: solo lo pendiente (+ lo ya registrado, plegado). Otros días: la grilla completa para poder corregir.
-  const principal = esHoy ? pendientes : SLOTS.filter((s) => dia < hoy)
+  const principal = esHoy ? pendientes : SLOTS.filter((s) => dia < hoy && (!dormidos.has(s.id) || registros.has(`${dia}|${s.id}`)))
+  // Lo posible en el día: todo menos lo dormido (a menos que se haya registrado algo en ese bloque).
+  const posibles = SLOTS.filter((s) => !dormidos.has(s.id) || registros.has(`${dia}|${s.id}`)).length
   const hechosHoy = esHoy ? hechos : []
 
   const row = (s) => <SlotRow key={s.id} slot={s} registro={registros.get(`${dia}|${s.id}`)} activo={esHoy && s.start <= minutosAhora && minutosAhora < s.start + 30} onPick={onPick} />
@@ -37,9 +39,9 @@ export default function DayView({ dia, setDia, registros, onPick, minutosAhora, 
 
       <div className="mt-4 flex items-center gap-3">
         <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-300">
-          <motion.div className="h-full rounded-full bg-brand" initial={false} animate={{ width: `${(hechos.length / SLOTS.length) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
+          <motion.div className="h-full rounded-full bg-brand" initial={false} animate={{ width: `${(hechos.length / posibles) * 100}%` }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} />
         </div>
-        <span className="text-xs tabular-nums text-zinc-500">{hechos.length}/{SLOTS.length}</span>
+        <span className="text-xs tabular-nums text-zinc-500">{hechos.length}/{posibles}</span>
       </div>
 
       <button onClick={onSueno} className="btn-press mt-5 flex w-full items-center gap-3 rounded-2xl bg-zinc-50 px-4 py-3 text-left ring-1 ring-zinc-900/10">

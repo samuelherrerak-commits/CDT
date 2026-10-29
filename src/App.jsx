@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster, toast } from 'sonner'
 import { LayoutDashboard, LogOut, Moon, Plus } from 'lucide-react'
 import { api, clearSession, getSession, readCache, writeCache, readLocal, writeLocal } from './lib/api'
-import { toMin, minutosDormidos } from './lib/sueno'
+import { toMin, minutosDormidos, slotsDormidos } from './lib/sueno'
 import { addDays, formatDay, toISO, weekStart } from './lib/dates'
 import { currentSlot, SLOTS } from './lib/slots'
 import { useTimeNotifier } from './hooks/useTimeNotifier'
@@ -110,6 +110,8 @@ function Portal({ session, onLogout, onAdmin, onPanel }) {
 
   const suenoRef = useRef(sueno)
   suenoRef.current = sueno
+  const perfilRef = useRef(perfil)
+  perfilRef.current = perfil
   useEffect(() => {
     const limite = addDays(toISO(new Date()), -14)
     writeLocal(`ct:sueno:${session.email}`, [...sueno.values()].filter((r) => r.fecha >= limite))
@@ -122,18 +124,19 @@ function Portal({ session, onLogout, onAdmin, onPanel }) {
     const ahora = new Date().getHours() * 60 + new Date().getMinutes()
     setDia(hoy)
     setTab('dia')
-    const despierta = suenoRef.current.get(hoy) ? toMin(suenoRef.current.get(hoy).despertar) : 0
-    const slot = SLOTS.find((s) => s.id === id) ?? pendientesDeHoy(registrosRef.current, hoy, ahora, despierta)[0] ?? currentSlot()
+    const dormidos = slotsDormidos(hoy, suenoRef.current, perfilRef.current)
+    const slot = SLOTS.find((s) => s.id === id) ?? pendientesDeHoy(registrosRef.current, hoy, ahora, dormidos)[0] ?? currentSlot()
     if (slot) setEditando(slot)
   }, [])
 
   // ¿Hay que preguntar por el sueño? Primero se pide el horario habitual (cuenta nueva) y luego "¿cuánto dormiste?" una vez al día.
   const hoyISO = toISO(new Date())
   const suenoHoy = sueno.get(hoyISO)
-  const despertarMin = suenoHoy ? toMin(suenoHoy.despertar) : 0
-  const decidido = sync || (sinRed && !!perfil) || (!!perfil && (!!suenoHoy || omitido === hoyISO || minutosAhora < 240))
+  // La pregunta de sueño se hace desde 1 h antes de la hora habitual de despertar.
+  const desdeMin = Math.max(0, (perfil ? toMin(perfil.despertar) : 360) - 60)
+  const decidido = sync || (sinRed && !!perfil) || (!!perfil && (!!suenoHoy || omitido === hoyISO || minutosAhora < desdeMin))
   const mostrarPerfil = (sync && !perfil) || perfilManual
-  const mostrarSuenoAuto = !!perfil && decidido && minutosAhora >= 240 && !suenoHoy && omitido !== hoyISO
+  const mostrarSuenoAuto = !!perfil && decidido && minutosAhora >= desdeMin && !suenoHoy && omitido !== hoyISO
   const suenoDia = suenoManual ?? (mostrarSuenoAuto ? hoyISO : null)
 
   // Al abrir desde el ícono: sueño (si falta) y luego directo al registro, una sola vez.
@@ -167,11 +170,12 @@ function Portal({ session, onLogout, onAdmin, onPanel }) {
   }, [cargar, abrirSlot])
 
   const esHoy = dia === hoyISO
-  const pendientes = pendientesDeHoy(registros, hoyISO, minutosAhora, despertarMin)
+  const dormidosHoy = slotsDormidos(hoyISO, sueno, perfil)
+  const pendientes = pendientesDeHoy(registros, hoyISO, minutosAhora, dormidosHoy)
 
   const { permission, requestPermission } = useTimeNotifier({
     enabled: true,
-    needsReminder: (id) => !registrosRef.current.has(`${toISO(new Date())}|${id}`),
+    needsReminder: (id) => !registrosRef.current.has(`${toISO(new Date())}|${id}`) && !slotsDormidos(toISO(new Date()), suenoRef.current, perfilRef.current).has(id),
     onOpen: abrirSlot,
     onWake: () => setSuenoManual(toISO(new Date())),
     perfil,
@@ -261,7 +265,7 @@ function Portal({ session, onLogout, onAdmin, onPanel }) {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}>
             {tab === 'dia'
-              ? <DayView dia={dia} setDia={setDia} registros={registros} onPick={setEditando} minutosAhora={minutosAhora} sueno={sueno.get(dia)} onSueno={() => setSuenoManual(dia)} despertarMin={dia === hoyISO ? despertarMin : 0} />
+              ? <DayView dia={dia} setDia={setDia} registros={registros} onPick={setEditando} minutosAhora={minutosAhora} sueno={sueno.get(dia)} onSueno={() => setSuenoManual(dia)} dormidos={dia === hoyISO ? dormidosHoy : slotsDormidos(dia, sueno, perfil)} />
               : <EstadoResultados dia={dia} setDia={setDia} registros={registros} sueno={sueno} />}
           </motion.div>
         </AnimatePresence>

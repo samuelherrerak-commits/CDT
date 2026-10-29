@@ -73,7 +73,7 @@ export default function EstadoResultados({ dia, setDia, registros, sueno }) {
         {er.porDia.map((d) => (
           <div key={d.fecha} className="text-center">
             <div className="flex h-16 items-end overflow-hidden rounded-lg bg-zinc-200">
-              <motion.div className="w-full rounded-lg bg-brand" initial={{ height: 0 }} animate={{ height: `${(d.bloques / 32) * 100}%` }} transition={{ duration: 0.5, ease }} />
+              <motion.div className="w-full rounded-lg bg-brand" initial={{ height: 0 }} animate={{ height: `${Math.min(100, (d.bloques / 32) * 100)}%` }} transition={{ duration: 0.5, ease }} />
             </div>
             <span className="mt-1.5 block text-xs text-zinc-500 first-letter:uppercase">{formatDay(d.fecha, { weekday: 'short' }).replace('.', '')}</span>
             <span className="tnum block text-xs text-zinc-400">{d.bloques}</span>

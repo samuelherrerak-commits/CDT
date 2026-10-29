@@ -18,7 +18,7 @@ var HOJA_SUENO = 'Sueno';
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
 var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
-var BLOQUES_DIA_COMPLETO = 24; // un día cuenta como "completo" con >= 24 de 32 bloques (75 %)
+var BLOQUES_DIA_COMPLETO = 24; // un día cuenta como "completo" con >= 24 bloques registrados (12 h; unas 16 h despierto/a)
 
 /** Ejecutar UNA vez desde el editor para crear hojas y secretos. */
 function setup() {
@@ -364,7 +364,7 @@ function hojaSueno_() {
 }
 function validarHora_(v) {
   var m = /^(\d{2}):(\d{2})$/.exec(String(v));
-  if (!m || (m[2] !== '00' && m[2] !== '30') || +m[1] < 6 || +m[1] > 21) throw new Error('Hora no válida');
+  if (!m || (m[2] !== '00' && m[2] !== '30') || +m[1] > 23) throw new Error('Hora no válida');
   return String(v);
 }
 // Defensa por si Sheets convirtió el texto en Date.

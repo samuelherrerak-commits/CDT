@@ -1,6 +1,6 @@
-// 32 bloques de 30 min: 06:00 → 22:00. `id` = hora de inicio en 24 h (clave en la hoja).
-export const SLOTS = Array.from({ length: 32 }, (_, i) => {
-  const mins = 6 * 60 + i * 30
+// 48 bloques de 30 min que cubren las 24 h (00:00 → 24:00). `id` = hora de inicio en 24 h (clave en la hoja).
+export const SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const mins = i * 30
   return { id: fmt24(mins), label: `${fmt12(mins)} – ${fmt12(mins + 30)}`, start: mins }
 })
 

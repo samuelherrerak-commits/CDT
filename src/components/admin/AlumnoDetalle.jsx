@@ -88,7 +88,7 @@ export default function AlumnoDetalle({ alumno, dia0, onBack }) {
                   <button onClick={() => setAbierto(on ? null : d)} aria-expanded={on} className="btn-press flex w-full items-center gap-3 py-3.5 text-left">
                     <span className="flex-1">
                       <span className="block font-medium capitalize">{formatDay(d, { weekday: 'long', day: 'numeric', month: 'short' })}</span>
-                      <span className="tnum text-sm text-zinc-500">{lista.length} de 32 bloques{s ? ` · durmió ${fmtDur(s.minutos)}` : ''}</span>
+                      <span className="tnum text-sm text-zinc-500">{lista.length} {lista.length === 1 ? 'bloque registrado' : 'bloques registrados'}{s ? ` · durmió ${fmtDur(s.minutos)}` : ''}</span>
                     </span>
                     <ChevronDown className={`size-4 text-zinc-400 transition-transform duration-200 ${on ? 'rotate-180' : ''}`} />
                   </button>

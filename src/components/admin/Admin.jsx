@@ -189,7 +189,7 @@ export default function Admin({ session, onLogout, onMiRegistro }) {
                     )
                   })}
                 </ul>
-                <p className="mt-4 text-xs leading-relaxed text-zinc-500 text-pretty">El % es lo registrado esta semana frente a los bloques que ya pasaron. Un día completo tiene 24 o más de 32 bloques registrados.</p>
+                <p className="mt-4 text-xs leading-relaxed text-zinc-500 text-pretty">El % es lo registrado esta semana frente a los bloques que ya pasaron. Un día completo tiene 24 o más bloques registrados (12 h). El cálculo supone unas 8 h de sueño al día.</p>
               </div>
             </div>
           </motion.div>
