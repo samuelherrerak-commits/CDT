@@ -36,14 +36,14 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 Mientras la celda esté vacía, la cuenta queda pendiente; las sesiones que el alumno ya tenía abiertas siguen activas.
 
 ## Módulo de administrador (profesor/a)
-1. En Apps Script → **Configuración del proyecto → Propiedades de la secuencia de comandos**, crea o edita `ADMIN_EMAILS` con el correo del profesor (varios, separados por comas).
+1. En la hoja **Usuarios**, columna **Rol** (H), escribe `administrador` junto al correo del profesor (o elígelo de la lista desplegable). Cualquier otro valor, o vacío, es `alumno`. Las cuentas nuevas nacen como `alumno`.
 2. Esa persona entra con su cuenta normal (créala con el código de acceso) y aterriza en el **Panel del grupo**. Desde ahí también puede ir a "Mi registro".
 3. El panel tiene menú lateral (pestañas arriba en pantallas chicas) con tres secciones:
    - **Resumen:** estado del grupo, quién requiere atención, actividad por día, promedio de horas y avance hacia la meta (7, 14 y 21 días completos).
    - **Alumnos:** tabla con búsqueda, filtros (todos, necesitan atención, al día, contraseña por recrear) y columnas ordenables. Un clic abre la ficha del alumno.
    - **Exportar:** CSV de registros y de sueño (semana o todo el curso).
    - **Ficha del alumno:** avance del curso día por día, y pestañas Resultados, Bitácora (lo que anotó) y Sueño; restablecer contraseña y exportar sus registros.
-El permiso se verifica siempre en el servidor; las cuentas de administrador no aparecen en la lista de alumnos.
+El rol se lee de la hoja en cada petición, así que quitar `administrador` le quita el acceso de inmediato. El permiso se verifica siempre en el servidor; las cuentas de administrador no aparecen en la lista de alumnos.
 
 ## Notas
 - Las contraseñas se guardan con sal + hash (nunca en texto plano) y la sesión es un token firmado (HMAC) de 90 días que se renueva con cada uso.

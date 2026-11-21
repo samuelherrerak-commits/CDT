@@ -2,19 +2,20 @@
  * LA CONTABILIDAD DE TU TIEMPO — Backend (Google Apps Script)
  *
  * Hoja de cálculo con 3 pestañas (se crean solas al ejecutar setup()):
- *   Usuarios:  Email | Nombre | Sal | HashPassword | Creado | HoraDormir | HoraDespertar   (horario habitual)
+ *   Usuarios:  Email | Nombre | Sal | HashPassword | Creado | HoraDormir | HoraDespertar | Rol
+ *              Rol: "alumno" (por defecto, también si está vacío) o "administrador". Se cambia a mano en la hoja.
  *   Registros: Email | Fecha (YYYY-MM-DD) | Hora (HH:mm, inicio del bloque) | Actividad | Categoria | Actualizado
  *   Sueno:     Email | Fecha (día en que despertó) | Durmio (HH:mm) | Desperto (HH:mm) | Minutos | Actualizado
  *
  * Configuración (Configuración del proyecto > Propiedades de la secuencia de comandos):
  *   CODIGO_ACCESO  Código que la profesora comparte con sus alumnos para poder registrarse.
- *   ADMIN_EMAILS   Correos del profesor/a (separados por comas) con acceso al panel de administración.
  *   (TOKEN_SECRET se genera automáticamente en setup()).
  */
 
 var HOJA_USUARIOS = 'Usuarios';
 var HOJA_REGISTROS = 'Registros';
 var HOJA_SUENO = 'Sueno';
+var ROLES = ['alumno', 'administrador'];
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
 var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
@@ -26,8 +27,10 @@ function setup() {
   var props = PropertiesService.getScriptProperties();
 
   var usuarios = ss.getSheetByName(HOJA_USUARIOS) || ss.insertSheet(HOJA_USUARIOS);
-  usuarios.getRange(1, 1, 1, 7).setValues([['Email', 'Nombre', 'Sal', 'HashPassword', 'Creado', 'HoraDormir', 'HoraDespertar']]);
-  usuarios.getRange('A:G').setNumberFormat('@'); // texto plano, evita conversiones de Sheets
+  usuarios.getRange(1, 1, 1, 8).setValues([['Email', 'Nombre', 'Sal', 'HashPassword', 'Creado', 'HoraDormir', 'HoraDespertar', 'Rol']]);
+  usuarios.getRange('A:H').setNumberFormat('@'); // texto plano, evita conversiones de Sheets
+  // Lista desplegable en la columna Rol (solo "alumno" o "administrador").
+  usuarios.getRange('H2:H').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(ROLES, true).setAllowInvalid(false).build());
   usuarios.setFrozenRows(1);
 
   var registros = ss.getSheetByName(HOJA_REGISTROS) || ss.insertSheet(HOJA_REGISTROS);
@@ -38,7 +41,15 @@ function setup() {
   hojaSueno_();
 
   if (!props.getProperty('TOKEN_SECRET')) props.setProperty('TOKEN_SECRET', Utilities.getUuid() + Utilities.getUuid());
-  if (props.getProperty('ADMIN_EMAILS') === null) props.setProperty('ADMIN_EMAILS', '');
+  // Migración: los correos que estaban en la propiedad ADMIN_EMAILS pasan a la columna Rol y la propiedad se elimina.
+  var viejos = (props.getProperty('ADMIN_EMAILS') || '').split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean);
+  if (viejos.length) {
+    var filas = usuarios.getDataRange().getValues();
+    for (var i = 1; i < filas.length; i++) {
+      if (viejos.indexOf(String(filas[i][0]).toLowerCase()) !== -1) usuarios.getRange(i + 1, 8).setValue('administrador');
+    }
+  }
+  props.deleteProperty('ADMIN_EMAILS');
   if (!props.getProperty('CODIGO_ACCESO')) props.setProperty('CODIGO_ACCESO', 'CAMBIA-ESTE-CODIGO');
 }
 
@@ -89,7 +100,7 @@ function registro_(d) {
   if (buscarUsuario_(ws, email)) return fail_('Ese correo ya está registrado');
 
   var sal = Utilities.getUuid();
-  ws.appendRow([email, nombre, sal, hash_(password, sal), new Date().toISOString()]);
+  ws.appendRow([email, nombre, sal, hash_(password, sal), new Date().toISOString(), '', '', 'alumno']);
   return { success: true, name: nombre, email: email, perfil: null, admin: esAdmin_(email), token: crearToken_(email) };
 }
 
@@ -218,9 +229,17 @@ function datosDe_(email, desde, hasta) {
 
 /* ---------- Administración (profesor/a) ---------- */
 
+/** Correos con rol "administrador" en la hoja Usuarios (columna H). Cualquier otro valor, o vacío, es alumno. */
 function admins_() {
-  var v = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS') || '';
-  return v.split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean);
+  var filas = hoja_(HOJA_USUARIOS).getDataRange().getValues(), out = [];
+  for (var i = 1; i < filas.length; i++) {
+    if (rol_(filas[i]) === 'administrador') out.push(String(filas[i][0]).toLowerCase());
+  }
+  return out;
+}
+function rol_(row) {
+  var r = String(row[7] || '').trim().toLowerCase();
+  return r === 'administrador' || r === 'admin' ? 'administrador' : 'alumno';
 }
 function esAdmin_(email) { return admins_().indexOf(email) !== -1; }
 function requerirAdmin_(token) {
