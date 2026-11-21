@@ -3,7 +3,10 @@
  *
  * Hoja de cálculo con 3 pestañas (se crean solas al ejecutar setup()):
  *   Usuarios:  Email | Nombre | Sal | HashPassword | Creado | HoraDormir | HoraDespertar | Rol
- *              Rol: "alumno" (por defecto, también si está vacío) o "administrador". Se cambia a mano en la hoja.
+ *              Rol: "alumno" (por defecto, también si está vacío), "profesor" o "administrador". Se cambia a mano en la hoja.
+ *                - alumno:         registra y cuenta en las estadísticas del curso.
+ *                - profesor:       registra sus propias actividades pero NO cuenta como alumno (ni en el panel ni en los CSV).
+ *                - administrador:  igual que profesor, y además entra al panel de administración.
  *   Registros: Email | Fecha (YYYY-MM-DD) | Hora (HH:mm, inicio del bloque) | Actividad | Categoria | Actualizado
  *   Sueno:     Email | Fecha (día en que despertó) | Durmio (HH:mm) | Desperto (HH:mm) | Minutos | Actualizado
  *
@@ -15,7 +18,7 @@
 var HOJA_USUARIOS = 'Usuarios';
 var HOJA_REGISTROS = 'Registros';
 var HOJA_SUENO = 'Sueno';
-var ROLES = ['alumno', 'administrador'];
+var ROLES = ['alumno', 'profesor', 'administrador'];
 var CATEGORIAS = ['inversion', 'gasto', 'mantenimiento'];
 var TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 90; // 90 días; se renueva en cada carga (sesión deslizante)
 var HASH_ITERACIONES = 1000;
@@ -229,19 +232,26 @@ function datosDe_(email, desde, hasta) {
 
 /* ---------- Administración (profesor/a) ---------- */
 
-/** Correos con rol "administrador" en la hoja Usuarios (columna H). Cualquier otro valor, o vacío, es alumno. */
-function admins_() {
-  var filas = hoja_(HOJA_USUARIOS).getDataRange().getValues(), out = [];
-  for (var i = 1; i < filas.length; i++) {
-    if (rol_(filas[i]) === 'administrador') out.push(String(filas[i][0]).toLowerCase());
-  }
+/** Rol de cada usuario según la columna H de la hoja Usuarios: { correo: "alumno" | "profesor" | "administrador" }. */
+function roles_() {
+  var filas = hoja_(HOJA_USUARIOS).getDataRange().getValues(), out = {};
+  for (var i = 1; i < filas.length; i++) out[String(filas[i][0]).toLowerCase()] = rol_(filas[i]);
   return out;
 }
+/** Cualquier valor distinto de profesor/administrador (incluido vacío) es alumno. Sin distinguir mayúsculas. */
 function rol_(row) {
   var r = String(row[7] || '').trim().toLowerCase();
-  return r === 'administrador' || r === 'admin' ? 'administrador' : 'alumno';
+  if (r === 'administrador' || r === 'admin') return 'administrador';
+  if (r === 'profesor' || r === 'profesora') return 'profesor';
+  return 'alumno';
 }
-function esAdmin_(email) { return admins_().indexOf(email) !== -1; }
+function esAdmin_(email) { return roles_()[email] === 'administrador'; }
+/** Correos que NO cuentan como alumnos (profesores y administradores): fuera de estadísticas y exportaciones. */
+function excluidos_() {
+  var r = roles_(), out = [];
+  for (var e in r) if (r[e] !== 'alumno') out.push(e);
+  return out;
+}
 function requerirAdmin_(token) {
   var email = verificarToken_(token);
   if (!esAdmin_(email)) throw new Error('Sin permiso');
@@ -252,13 +262,13 @@ function requerirAdmin_(token) {
 function adminResumen_(d) {
   requerirAdmin_(d.token);
   var desde = validarFecha_(d.desde), hasta = validarFecha_(d.hasta), hoy = validarFecha_(d.hoy);
-  var admins = admins_();
+  var excluidos = excluidos_();
 
   var alumnos = {}, orden = [];
   var us = hoja_(HOJA_USUARIOS).getDataRange().getValues();
   for (var i = 1; i < us.length; i++) {
     var email = String(us[i][0]).toLowerCase();
-    if (!email || admins.indexOf(email) !== -1) continue;
+    if (!email || excluidos.indexOf(email) !== -1) continue;
     alumnos[email] = { email: email, nombre: us[i][1], perfil: perfil_(us[i]), pendientePassword: String(us[i][3]).trim() === '',
       bloques: 0, porCat: { inversion: 0, gasto: 0, mantenimiento: 0 }, suenoMin: 0, suenoDias: 0, ultimo: '', bloquesHoy: 0, _dias: {} };
     orden.push(email);
@@ -334,7 +344,7 @@ function adminReset_(d) {
 function adminExportar_(d) {
   requerirAdmin_(d.token);
   var desde = validarFecha_(d.desde), hasta = validarFecha_(d.hasta);
-  var admins = admins_(), nombres = {};
+  var excluidos = excluidos_(), nombres = {};
   var us = hoja_(HOJA_USUARIOS).getDataRange().getValues();
   for (var i = 1; i < us.length; i++) nombres[String(us[i][0]).toLowerCase()] = us[i][1];
 
@@ -342,13 +352,13 @@ function adminExportar_(d) {
   var filas = hoja_(HOJA_REGISTROS).getDataRange().getValues();
   for (var j = 1; j < filas.length; j++) {
     var e = String(filas[j][0]).toLowerCase(), f = fechaTexto_(filas[j][1]);
-    if (admins.indexOf(e) !== -1 || f < desde || f > hasta) continue;
+    if (excluidos.indexOf(e) !== -1 || f < desde || f > hasta) continue;
     registros.push({ nombre: nombres[e] || '', email: e, fecha: f, hora: horaTexto_(filas[j][2]), actividad: filas[j][3], categoria: filas[j][4] });
   }
   var fs = hojaSueno_().getDataRange().getValues();
   for (var k = 1; k < fs.length; k++) {
     var e2 = String(fs[k][0]).toLowerCase(), f2 = fechaTexto_(fs[k][1]);
-    if (admins.indexOf(e2) !== -1 || f2 < desde || f2 > hasta) continue;
+    if (excluidos.indexOf(e2) !== -1 || f2 < desde || f2 > hasta) continue;
     sueno.push({ nombre: nombres[e2] || '', email: e2, fecha: f2, dormir: horaTexto_(fs[k][2]), despertar: horaTexto_(fs[k][3]), minutos: Number(fs[k][4]) });
   }
   return { success: true, registros: registros, sueno: sueno };

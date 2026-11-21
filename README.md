@@ -36,7 +36,10 @@ Con el repo en GitHub: **New → Blueprint** (usa `render.yaml`) o **New → Sta
 Mientras la celda esté vacía, la cuenta queda pendiente; las sesiones que el alumno ya tenía abiertas siguen activas.
 
 ## Módulo de administrador (profesor/a)
-1. En la hoja **Usuarios**, columna **Rol** (H), escribe `administrador` junto al correo del profesor (o elígelo de la lista desplegable). Cualquier otro valor, o vacío, es `alumno`. Las cuentas nuevas nacen como `alumno`.
+1. En la hoja **Usuarios**, columna **Rol** (H), elige el rol de cada persona en la lista desplegable. Vacío o cualquier otro valor es `alumno`; las cuentas nuevas nacen como `alumno`.
+   - `alumno`: registra y cuenta en las estadísticas.
+   - `profesor`: registra sus propias actividades pero **no cuenta como alumno** (ni en el panel ni en los CSV). No ve el panel.
+   - `administrador`: como profesor, y además entra al panel de administración.
 2. Esa persona entra con su cuenta normal (créala con el código de acceso) y aterriza en el **Panel del grupo**. Desde ahí también puede ir a "Mi registro".
 3. El panel tiene menú lateral (pestañas arriba en pantallas chicas) con tres secciones:
    - **Resumen:** estado del grupo, quién requiere atención, actividad por día, promedio de horas y avance hacia la meta (7, 14 y 21 días completos).
