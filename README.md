@@ -38,7 +38,11 @@ Mientras la celda esté vacía, la cuenta queda pendiente; las sesiones que el a
 ## Módulo de administrador (profesor/a)
 1. En Apps Script → **Configuración del proyecto → Propiedades de la secuencia de comandos**, crea o edita `ADMIN_EMAILS` con el correo del profesor (varios, separados por comas).
 2. Esa persona entra con su cuenta normal (créala con el código de acceso) y aterriza en el **Panel del grupo**. Desde ahí también puede ir a "Mi registro".
-3. El panel muestra el avance semanal por alumno, quién necesita atención, el detalle de cada alumno (estado de resultados y lo que anotó), restablecer contraseñas y exportar CSV.
+3. El panel tiene menú lateral (pestañas arriba en pantallas chicas) con tres secciones:
+   - **Resumen:** estado del grupo, quién requiere atención, actividad por día, promedio de horas y avance hacia la meta (7, 14 y 21 días completos).
+   - **Alumnos:** tabla con búsqueda, filtros (todos, necesitan atención, al día, contraseña por recrear) y columnas ordenables. Un clic abre la ficha del alumno.
+   - **Exportar:** CSV de registros y de sueño (semana o todo el curso).
+   - **Ficha del alumno:** avance del curso día por día, y pestañas Resultados, Bitácora (lo que anotó) y Sueño; restablecer contraseña y exportar sus registros.
 El permiso se verifica siempre en el servidor; las cuentas de administrador no aparecen en la lista de alumnos.
 
 ## Notas

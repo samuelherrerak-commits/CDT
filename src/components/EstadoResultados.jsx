@@ -8,7 +8,7 @@ const fmtH = (h) => `${Number.isInteger(h) ? h : h.toFixed(1)} h`
 const ease = [0.23, 1, 0.32, 1]
 
 /** Se presenta como un estado de resultados de verdad: renglones, líneas y doble raya en el total. */
-export default function EstadoResultados({ dia, setDia, registros, sueno }) {
+export default function EstadoResultados({ dia, setDia, registros, sueno, sinCabecera = false }) {
   const lunes = weekStart(dia)
   const domingo = addDays(lunes, 6)
   const esActual = weekStart(toISO(new Date())) === lunes
@@ -23,7 +23,7 @@ export default function EstadoResultados({ dia, setDia, registros, sueno }) {
 
   return (
     <section>
-      <div className="flex items-start justify-between">
+      {!sinCabecera && <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-medium">Estado de resultados</h2>
           <p className="mt-0.5 text-sm text-zinc-500">
@@ -34,9 +34,9 @@ export default function EstadoResultados({ dia, setDia, registros, sueno }) {
           <button aria-label="Semana anterior" onClick={() => setDia(addDays(lunes, -7))} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200"><ChevronLeft className="size-4" /></button>
           <button aria-label="Semana siguiente" disabled={esActual} onClick={() => setDia(addDays(lunes, 7))} className="btn-press grid size-9 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200 disabled:opacity-30"><ChevronRight className="size-4" /></button>
         </div>
-      </div>
+      </div>}
 
-      <dl className="mt-8">
+      <dl className={sinCabecera ? '' : 'mt-8'}>
         <div className="flex items-baseline justify-between border-b border-zinc-900 pb-2">
           <dt className="font-medium">Capital de tiempo{esActual ? ' transcurrido' : ''}</dt>
           <dd className="tnum font-medium">{fmtH(er.capital)}</dd>

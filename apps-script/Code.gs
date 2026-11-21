@@ -269,16 +269,25 @@ function adminResumen_(d) {
     b.suenoDias++;
   }
 
+  var porDia = {}; // por fecha del rango: cuántos alumnos registraron y cuántos bloques en total
   var lista = orden.map(function (e) {
-    var x = alumnos[e], dias = Object.keys(x._dias), completos = 0;
-    dias.forEach(function (dia) { if (x._dias[dia] >= BLOQUES_DIA_COMPLETO) completos++; });
+    var x = alumnos[e], dias = Object.keys(x._dias).sort(), completos = 0;
+    dias.forEach(function (dia) {
+      if (x._dias[dia] >= BLOQUES_DIA_COMPLETO) completos++;
+      if (dia >= desde && dia <= hasta) {
+        porDia[dia] = porDia[dia] || { alumnos: 0, bloques: 0 };
+        porDia[dia].alumnos++;
+        porDia[dia].bloques += x._dias[dia];
+      }
+    });
+    x.primero = dias.length ? dias[0] : '';
     x.diasConActividad = dias.length;
     x.diasCompletos = completos;
     delete x._dias;
     return x;
   });
   lista.sort(function (p, q) { return String(p.nombre).localeCompare(String(q.nombre)); });
-  return { success: true, alumnos: lista };
+  return { success: true, alumnos: lista, porDia: porDia };
 }
 
 /** Los mismos datos que ve el alumno (registros, sueño, horario) para el rango pedido. */
